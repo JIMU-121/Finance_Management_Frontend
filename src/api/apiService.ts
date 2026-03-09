@@ -21,8 +21,8 @@ export const apiService = {
     return response.data;
   },
 
-  patch: async<T>(url: string): Promise<T> => {
-    const response = await axiosInstance.patch<T>(url);
+  patch: async<T>(url: string,data? : any): Promise<T> => {
+    const response = await axiosInstance.patch<T>(url,data);
     return response.data;
   },
   

@@ -301,13 +301,13 @@ export default function AddProject() {
       content: step1,
     },
     {
-      label: "Manager Info",
+      label: "Manager Information",
       title: "Manager Information",
       subtitle: "Fill out the required information to proceed to the next step.",
       content: step2,
     },
     {
-      label: "Client Info",
+      label: "Client Information",
       title: "Client Information",
       subtitle: "Fill out the required information to proceed to the next step.",
       content: step3,
@@ -327,7 +327,7 @@ export default function AddProject() {
 
       <div className="max-w-4xl mx-auto">
         <MultiStepForm
-          steps={steps}
+          steps={steps} 
           onValidate={handleValidate}
           onSubmit={handleSubmit(onSubmit)}
           submitLabel="Save Project"

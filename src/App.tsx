@@ -27,6 +27,7 @@ import "react-toastify/dist/ReactToastify.css";
 import Add from "./pages/Manage-Project/AddProject";
 import View from "./pages/Manage-Project/ViewProject";
 import Assign from "./pages/Manage-Project/AssignProject";
+import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
 
 export default function App() {
   return (
@@ -34,60 +35,66 @@ export default function App() {
       <Router>
         <ScrollToTop />
         <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
 
-            {/* Others Page */}
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/manage-user" element={<ManageUser />} />
-            <Route path="/manage-employees" element={<ManageEmployees />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/document-type" element={<ManageDocumentType />} />
-            <Route path="/blank" element={<Blank />} />
-            <Route path="/add-project" element={<Add/>} />
-            <Route path="/view-project" element={<View/>} />
-            <Route path="/assign-project" element={<Assign/>} />
+          {/* ── Protected: must be logged in with a valid token ── */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<AppLayout />}>
+              <Route index path="/" element={<Home />} />
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
+              {/* Others Page */}
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/manage-user" element={<ManageUser />} />
+              <Route path="/manage-employees" element={<ManageEmployees />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/document-type" element={<ManageDocumentType />} />
+              <Route path="/blank" element={<Blank />} />
+              <Route path="/add-project" element={<Add />} />
+              <Route path="/view-project" element={<View />} />
+              <Route path="/assign-project" element={<Assign />} />
 
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
+              {/* Forms */}
+              <Route path="/form-elements" element={<FormElements />} />
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+              {/* Tables */}
+              <Route path="/basic-tables" element={<BasicTables />} />
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
+              {/* Ui Elements */}
+              <Route path="/alerts" element={<Alerts />} />
+              <Route path="/avatars" element={<Avatars />} />
+              <Route path="/badge" element={<Badges />} />
+              <Route path="/buttons" element={<Buttons />} />
+              <Route path="/images" element={<Images />} />
+              <Route path="/videos" element={<Videos />} />
+
+              {/* Charts */}
+              <Route path="/line-chart" element={<LineChart />} />
+              <Route path="/bar-chart" element={<BarChart />} />
+            </Route>
           </Route>
 
-          {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+          {/* ── Guest: redirect to "/" if already logged in ── */}
+          <Route element={<GuestRoute />}>
+            <Route path="/signin" element={<SignIn />} />
+            <Route path="/signup" element={<SignUp />} />
+          </Route>
 
-         
           {/* Fallback Route */}
           <Route path="*" element={<NotFound />} />
+
         </Routes>
       </Router>
-       {/* React Toastify */}
-          <ToastContainer
-            position="top-right"
-            autoClose={3000}
-            hideProgressBar={false}
-            newestOnTop
-            closeOnClick
-            pauseOnHover
-            draggable
-            theme="colored"
-          />
+
+      {/* React Toastify */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        theme="colored"
+      />
     </>
   );
 }

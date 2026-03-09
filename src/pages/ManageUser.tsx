@@ -11,8 +11,8 @@ import {
   getAllUsers,
   registerUser,
   deleteUser,
-  updateUser,
   User,
+  patchUser,
 } from "../features/users/userApi";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
 import Spinner from "../components/ui/spinner/Spinner";
@@ -25,14 +25,20 @@ const roleOptions = [
   { value: "3", label: "Employee" },
 ];
 
-const roleLabel = (roleName: string) => {
-  const map: Record<string, { label: string; color: string }> = {
-    Admin: { label: "Admin", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
-    Partner: { label: "Partner", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
-    Employee: { label: "Employee", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  };
-  const found = map[roleName];
-  return found ?? { label: roleName, color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" };
+// Maps both numeric IDs from the backend (1,2,3) and string names to display info
+const ROLE_MAP: Record<string, { label: string; color: string }> = {
+  // Numeric keys — what the backend sends
+  "1": { label: "Admin", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  "2": { label: "Partner", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  "3": { label: "Employee", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+
+  Admin: { label: "Admin", color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  Partner: { label: "Partner", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  Employee: { label: "Employee", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+};
+
+const roleLabel = (role: string | number) => {
+  return ROLE_MAP[String(role)] ?? { label: String(role), color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" };
 };
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
@@ -66,7 +72,7 @@ const userColumns: ColumnDef<User & { id: number }>[] = [
   {
     header: "Role",
     render: (row) => {
-      const { label, color } = roleLabel(row.roleName);
+      const { label, color } = roleLabel(row.role);
       return (
         <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${color}`}>
           {label}
@@ -80,7 +86,7 @@ const userDetailFields: DetailField<User & { id: number }>[] = [
   { label: "First Name", render: (r) => r.firstName },
   { label: "Last Name", render: (r) => r.lastName },
   { label: "Email", render: (r) => r.email },
-  { label: "Role", render: (r) => r.roleName },
+  { label: "Role", render: (r) => r.role },
   { label: "User ID", render: (r) => r.id },
 ];
 
@@ -100,22 +106,22 @@ function EditUserModal({
   const [email, setEmail] = useState(user.email);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState(0);
+  const [role, setRole] = useState<string>(String(user.role));
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!firstName || !lastName || !email) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       showError("First name, last name and email are required.");
       return;
     }
     try {
       setSaving(true);
-      await updateUser(user.id, {
+      await patchUser(user.id, {
         firstName,
         lastName,
         email,
         password: password || (user as any).password || "",
-        role: Number(role),
+        role: Number(role) || Number(user.role),
       });
       showSuccess("User updated successfully.");
       onUpdated();
@@ -184,7 +190,12 @@ function EditUserModal({
           </div>
           <div>
             <Label>Role</Label>
-            <Select options={roleOptions} placeholder={user.roleName || "Select role"} onChange={(v) => setRole(Number(v))} />
+            <Select
+              options={roleOptions}
+              defaultValue={String(user.role)}
+              placeholder="Select role"
+              onChange={(v) => setRole(v)}
+            />
           </div>
         </div>
         {/* Footer */}
@@ -434,7 +445,7 @@ export default function ManageUser() {
                   detailFields={userDetailFields}
                   onDelete={handleDelete}
                   onEdit={(row) => setEditUser(row)}
-                  searchKeys={["firstName", "lastName", "email", "roleName"]}
+                  searchKeys={["firstName", "lastName", "email", "role"]}
                   searchPlaceholder="Search by name, email or role..."
                   title="All Users"
                 />

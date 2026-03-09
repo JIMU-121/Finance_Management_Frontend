@@ -109,8 +109,8 @@ function StatusBadge({ active }: { active: boolean }) {
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${active
-          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+        : "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
         }`}
     >
       <span className={`h-1.5 w-1.5 rounded-full ${active ? "bg-green-500" : "bg-red-500"}`} />
@@ -130,11 +130,7 @@ const columns: ColumnDef<Project>[] = [
       </span>
     ),
   },
-  {
-    header: "Technology",
-    accessor: "TechnologyStack",
-    className: "whitespace-nowrap",
-  },
+
   {
     header: "Manager",
     accessor: "ManagerName",

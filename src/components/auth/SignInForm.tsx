@@ -1,30 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
 import Button from "../ui/button/Button";
-// import Alert from "../ui/alert/Alert";
+import Spinner from "../ui/spinner/Spinner";
 import { loginApi } from "../../features/auth/authApi";
 import { navigateByRole } from "../../utils/navigation";
 import { showError, showSuccess } from "../../utils/toast";
+import { useAuth } from "../../context/AuthContext";
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  // const [error, setError] = useState("");
-  // const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-        useEffect(() => {
-        const role =
-          localStorage.getItem("role") || sessionStorage.getItem("role");
-
-        if (role) {
-          navigateByRole(role, navigate);
-        }
-      }, []);
+  const { login } = useAuth();
   //Submit handler for sign in form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,20 +68,28 @@ export default function SignInForm() {
     //     setError("Something went wrong.");
     //   }
     // }
+    setIsLoading(true);
     try {
       const res = await loginApi(email, password);
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user",res.data.role)
-      showSuccess("Login Successfully")
-      navigateByRole(res.data.role, navigate);
+
+      // Sync into AuthContext (updates state + storage atomically)
+      login(
+        { user: res.data.user, role: res.data.user.role, token: res.data.token },
+        isChecked
+      );
+
+      showSuccess("Login successful! Redirecting...");
+      navigateByRole(res.data.user.role, navigate);
     } catch (error: any) {
       showError(error.response?.data?.message || "Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
     <div className="flex flex-col flex-1">
       <div className="w-full max-w-md pt-10 mx-auto">
-          {/* <div>
+        {/* <div>
             {error && (
               <Alert variant="error" title="Login failed" message={error} />
             )}
@@ -216,11 +217,18 @@ export default function SignInForm() {
                 </div>
                 <div>
                   <Button
-                    // onClick={handleSubmit}
-                    className="w-full"
+                    className="w-full flex items-center justify-center gap-2"
                     size="sm"
+                    disabled={isLoading}
                   >
-                    Sign in
+                    {isLoading ? (
+                      <>
+                        <Spinner size="sm" color="white" />
+                        <span>Signing in...</span>
+                      </>
+                    ) : (
+                      "Sign in"
+                    )}
                   </Button>
                 </div>
               </div>

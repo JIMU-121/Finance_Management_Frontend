@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { isTokenValid } from "../utils/jwt";
 
 interface User {
   id: string;
@@ -17,6 +18,8 @@ interface AuthContextType {
   user: User | null;
   role: string | null;
   token: string | null;
+  /** True once the initial session-restore useEffect has finished */
+  isInitialized: boolean;
   login: (data: AuthData, rememberMe: boolean) => void;
   logout: () => void;
 }
@@ -31,6 +34,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  // Prevents route guards from redirecting before we've checked storage
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const storedUser =
@@ -42,11 +47,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const storedToken =
       localStorage.getItem("token") || sessionStorage.getItem("token");
 
-    if (storedUser && storedRole && storedToken) {
-      setUser(JSON.parse(storedUser));
+    if (storedUser && storedRole && storedToken && isTokenValid(storedToken)) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        // storedUser was corrupted — clear and start fresh
+        localStorage.clear();
+        sessionStorage.clear();
+        setIsInitialized(true);
+        return;
+      }
+      // Role is stored as a plain string (e.g. "Admin") — no JSON.parse needed
       setRole(storedRole);
       setToken(storedToken);
+    } else if (storedToken) {
+      // Token expired — clear stale data
+      localStorage.clear();
+      sessionStorage.clear();
     }
+
+    // Mark as ready regardless of outcome so guards can render
+    setIsInitialized(true);
   }, []);
 
   const login = (data: AuthData, rememberMe: boolean) => {
@@ -70,7 +91,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, token, login, logout }}>
+    <AuthContext.Provider value={{ user, role, token, isInitialized, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

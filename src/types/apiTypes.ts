@@ -8,12 +8,19 @@ export interface LoginResponse {
   token: string;
   role: string;
   email: string;
-}
-
-export interface RegisterResponse{
+  user: {
+    role: string;
+    email: string;
     firstName: string;
     lastName: string;
-    email: string;
-    password : string;
-    role : string;
+    id: string;
+  }
+}
+
+export interface RegisterResponse {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: string;
 }

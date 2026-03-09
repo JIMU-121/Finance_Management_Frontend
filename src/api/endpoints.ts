@@ -7,12 +7,13 @@ export const API_ENDPOINTS = {
   },
 
   USERS: {
-    BASE: `${API_PREFIX}/users`,
-    GET_ALL: `${API_PREFIX}/users`,
-    GET_BY_ID: (id: number) => `${API_PREFIX}/users/${id}`,
-    CREATE: `${API_PREFIX}/users`,
-    UPDATE: (id: number) => `${API_PREFIX}/users/${id}`,
-    DELETE: (id: number) => `${API_PREFIX}/users/${id}`,
+    BASE: `${API_PREFIX}/user`,
+    GET_ALL: `${API_PREFIX}/user`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/user/${id}`,
+    CREATE: `${API_PREFIX}/user`,
+    UPDATE: (id: number) => `${API_PREFIX}/user/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/user/${id}`,
+    PATCH : (id: number) => `${API_PREFIX}/user/${id}`
   },
   PROJECT: {
     BASE: `${API_PREFIX}/projects`,
@@ -23,7 +24,7 @@ export const API_ENDPOINTS = {
     DELETE: (id: number) => `${API_PREFIX}/projects/${id}`,
     PATCH: (id: number) => `${API_PREFIX}/projects/${id}`,
   },
-  EMPLOYEE : {
+  EMPLOYEE: {
     BASE: `${API_PREFIX}/employees`,
     GET_ALL: `${API_PREFIX}/employees`,
     GET_BY_ID: (id: number) => `${API_PREFIX}/employee/${id}`,
