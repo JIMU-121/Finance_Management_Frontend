@@ -20,22 +20,55 @@ export interface RegisterUserPayload {
 }
 
 export interface PatchUserPayload {
-  firstName?: string ;
+  username?: string;
+  firstName?: string;
   lastName?: string;
   email?: string;
+  mobileNumber?: string;
+  emergencyMobileNumber?: string;
+  gender?: number;
   password?: string;
   role?: Number;
 }
 
-export const getAllUsers = async (): Promise<User[]> => {
-  // apiService.get already unwraps axios response.data
-  const body = await apiService.get<any>(API_ENDPOINTS.USERS.GET_ALL);
+/** Single source of truth for the UserGender C# enum */
+export const genderToEnum: Record<string, number> = {
+  Male: 1,
+  Female: 2,
+  Other: 3,
+};
 
-  // Handle different possible API response shapes:
-  if (Array.isArray(body)) return body;               // direct array
-  if (Array.isArray(body?.data)) return body.data;    // { data: [...] }
-  if (Array.isArray(body?.$values)) return body.$values; // ASP.NET style
-  return [];
+/** Reverse map — derived automatically so it never goes out of sync */
+export const genderFromEnum = Object.fromEntries(
+  Object.entries(genderToEnum).map(([label, value]) => [value, label])
+) as Record<number, string>;
+
+/** Ready-made option list for dropdowns */
+export const GENDER_OPTIONS = Object.entries(genderToEnum).map(
+  ([label, value]) => ({ label, value })
+);
+
+
+export const getAllUsers = async (pageNumber: number = 1, pageSize: number = 10): Promise<{ data: User[]; total: number }> => {
+
+  const body = await apiService.get<any>(`${API_ENDPOINTS.USERS.GET_ALL}?PageNumber=${pageNumber}&PageSize=${pageSize}`);
+
+  let data: User[] = [];
+  let total = 0;
+
+  if (Array.isArray(body)) {
+    data = body;
+    total = body.length;
+  } else if (body && typeof body === 'object') {
+    if (Array.isArray(body.items)) data = body.items;
+    else if (Array.isArray(body.data)) data = body.data;
+    else if (Array.isArray(body.$values)) data = body.$values;
+    else data = [];
+    
+    total = body.totalCount ?? body.totalRecords ?? body.total ?? data.length;
+  }
+
+  return { data, total };
 };
 
 export const registerUser = (data: RegisterUserPayload) =>
@@ -50,5 +83,5 @@ export const getUserById = (id: number) =>
 export const updateUser = (id: number, data: RegisterUserPayload) =>
   apiService.put(API_ENDPOINTS.USERS.UPDATE(id), data);
 
-export const patchUser = (id: number, data:PatchUserPayload) =>
-  apiService.patch(API_ENDPOINTS.USERS.PATCH(id),data)
+export const patchUser = (id: number, data: PatchUserPayload) =>
+  apiService.patch(API_ENDPOINTS.USERS.PATCH(id), data)

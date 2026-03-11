@@ -16,6 +16,7 @@ import {
 } from "../features/users/userApi";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
 import Spinner from "../components/ui/spinner/Spinner";
+import { usePagination } from "../hooks/usePagination";
 
 // ─── Role helpers ─────────────────────────────────────────────────────────────
 
@@ -337,12 +338,16 @@ export default function ManageUser() {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [editUser, setEditUser] = useState<(User & { id: number }) | null>(null);
 
+  // Pagination hook
+  const { pageNumber, pageSize, setTotalItems, paginationProps } = usePagination();
+
   // ── Fetch users ──────────────────────────────────────────────────────────────
   const fetchUsers = async () => {
     try {
       setLoadingUsers(true);
-      const data = await getAllUsers();
-      setUsers(data as (User & { id: number })[]);
+      const res = await getAllUsers(pageNumber, pageSize);
+      setUsers(res.data as (User & { id: number })[]);
+      setTotalItems(res.total);
     } catch (err) {
       console.error("Failed to fetch users", err);
       showError("Failed to load users.");
@@ -355,7 +360,7 @@ export default function ManageUser() {
     if (activeTab === "view") {
       fetchUsers();
     }
-  }, [activeTab]);
+  }, [activeTab, pageNumber, pageSize]);
 
   // ── Delete user ──────────────────────────────────────────────────────────────
   const handleDelete = async (id: number) => {
@@ -448,6 +453,7 @@ export default function ManageUser() {
                   searchKeys={["firstName", "lastName", "email", "role"]}
                   searchPlaceholder="Search by name, email or role..."
                   title="All Users"
+                  pagination={paginationProps}
                 />
               )}
             </>

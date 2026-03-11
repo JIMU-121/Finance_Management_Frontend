@@ -48,6 +48,15 @@ export type DataTableProps<T extends { id: number }> = {
     hideEdit?: boolean;
     /** Hide the delete icon */
     hideDelete?: boolean;
+    /** Pagination options */
+    pagination?: {
+        pageNumber: number;
+        pageSize: number;
+        totalItems: number;
+        onPageChange: (page: number) => void;
+        onPageSizeChange?: (size: number) => void;
+        pageSizeOptions?: number[];
+    };
 };
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -137,6 +146,7 @@ export function DataTable<T extends { id: number }>({
     hideDetails = false,
     hideEdit = false,
     hideDelete = false,
+    pagination,
 }: DataTableProps<T>) {
     const [search, setSearch] = useState("");
     const [detailRow, setDetailRow] = useState<T | null>(null);
@@ -342,6 +352,68 @@ export function DataTable<T extends { id: number }>({
                         </tbody>
                     </table>
                 </div>
+
+                {/* ── Pagination ── */}
+                {pagination && pagination.totalItems > 0 && (
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-t border-gray-200 px-5 py-4 dark:border-gray-700">
+                        <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                            {pagination.onPageSizeChange && (
+                                <div className="flex items-center gap-2">
+                                    <span>Rows per page:</span>
+                                    <select
+                                        value={pagination.pageSize}
+                                        onChange={(e) => pagination.onPageSizeChange!(Number(e.target.value))}
+                                        className="cursor-pointer rounded border border-gray-300 bg-transparent px-2 py-1 text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 dark:border-gray-600 dark:text-white"
+                                    >
+                                        {(pagination.pageSizeOptions ?? [10, 20, 30, 40, 50]).map((size) => (
+                                            <option key={size} value={size} className="text-gray-900 dark:bg-gray-800 dark:text-white">
+                                                {size}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
+                            <div>
+                                Showing <span className="font-semibold text-gray-900 dark:text-white">{(pagination.pageNumber - 1) * pagination.pageSize + 1}</span> to <span className="font-semibold text-gray-900 dark:text-white">{Math.min(pagination.pageNumber * pagination.pageSize, pagination.totalItems)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{pagination.totalItems}</span> entries
+                            </div>
+                        </div>
+                        <div className="flex gap-1">
+                            <button
+                                onClick={() => pagination.onPageChange(Math.max(1, pagination.pageNumber - 1))}
+                                disabled={pagination.pageNumber === 1}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+                            >
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            {Array.from({ length: Math.ceil(pagination.totalItems / pagination.pageSize) }, (_, i) => i + 1)
+                                .filter(p => p === 1 || p === Math.ceil(pagination.totalItems / pagination.pageSize) || Math.abs(p - pagination.pageNumber) <= 1)
+                                .map((p, i, arr) => {
+                                    if (i > 0 && arr[i - 1] !== p - 1) {
+                                        return <span key={`ellipsis-${p}`} className="flex items-end justify-center px-1 text-gray-500">...</span>;
+                                    }
+                                    return (
+                                        <button
+                                            key={p}
+                                            onClick={() => pagination.onPageChange(p)}
+                                            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-sm font-medium ${pagination.pageNumber === p
+                                                ? 'border-blue-600 bg-blue-50 text-blue-600 dark:border-blue-500 dark:bg-blue-900/30 dark:text-blue-400'
+                                                : 'border-gray-300 text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800'
+                                                }`}
+                                        >
+                                            {p}
+                                        </button>
+                                    );
+                                })}
+                            <button
+                                onClick={() => pagination.onPageChange(Math.min(Math.ceil(pagination.totalItems / pagination.pageSize), pagination.pageNumber + 1))}
+                                disabled={pagination.pageNumber >= Math.ceil(pagination.totalItems / pagination.pageSize)}
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-800"
+                            >
+                                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Modals ── */}

@@ -1,10 +1,23 @@
+import { useEffect } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import UserMetaCard from "../components/UserProfile/UserMetaCard";
 import UserInfoCard from "../components/UserProfile/UserInfoCard";
 import UserAddressCard from "../components/UserProfile/UserAddressCard";
 import PageMeta from "../components/common/PageMeta";
+import { useAuth } from "../context/AuthContext";
+import { getUserById } from "../features/users/userApi";
 
 export default function Profile() {
+  const { user, updateUser } = useAuth();
+
+  // Fetch fresh user data from DB every time the page mounts
+  useEffect(() => {
+    if (!user?.id) return;
+    getUserById(Number(user.id))
+      .then((fresh) => updateUser(fresh as any))
+      .catch((err) => console.error("Failed to refresh user profile:", err));
+  }, []);
+
   return (
     <>
       <PageMeta

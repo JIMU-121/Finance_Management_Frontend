@@ -1,11 +1,25 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { isTokenValid } from "../utils/jwt";
+import { jwtDecode } from "jwt-decode";
+
+/** Shape of your backend's JWT payload */
+interface JwtPayload {
+  nameid: string;
+  email: string;
+  unique_name: string;
+  role: string;
+}
 
 interface User {
   id: string;
+  username?: string;
   firstName: string;
   lastName: string;
   email: string;
+  mobileNumber?: string;
+  emergencyMobileNumber?: string;
+  gender?: number; // UserGender enum int: 0=Male, 1=Female, 2=Other
+  isActive?: boolean;
 }
 
 interface AuthData {
@@ -22,6 +36,8 @@ interface AuthContextType {
   isInitialized: boolean;
   login: (data: AuthData, rememberMe: boolean) => void;
   logout: () => void;
+  /** Update the stored user after a profile edit and re-persist to storage */
+  updateUser: (updated: User) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -38,30 +54,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem("user") || sessionStorage.getItem("user");
-
-    const storedRole =
-      localStorage.getItem("role") || sessionStorage.getItem("role");
-
     const storedToken =
       localStorage.getItem("token") || sessionStorage.getItem("token");
 
-    if (storedUser && storedRole && storedToken && isTokenValid(storedToken)) {
+    if (storedToken && isTokenValid(storedToken)) {
       try {
-        setUser(JSON.parse(storedUser));
+        const decoded = jwtDecode<JwtPayload>(storedToken);
+        console.log("Decoded JWT:", decoded);
+
+        // Split "First Last" into separate fields
+        const [firstName = "", ...rest] = decoded.unique_name.split(" ");
+        const lastName = rest.join(" ");
+
+        // Map JWT claims → User object
+        const userFromToken: User = {
+          id: decoded.nameid,
+          firstName,
+          lastName,
+          email: decoded.email,
+        };
+
+        setUser(userFromToken);
+        setRole(decoded.role ?? null);
+        setToken(storedToken);
       } catch {
-        // storedUser was corrupted — clear and start fresh
         localStorage.clear();
         sessionStorage.clear();
-        setIsInitialized(true);
-        return;
       }
-      // Role is stored as a plain string (e.g. "Admin") — no JSON.parse needed
-      setRole(storedRole);
-      setToken(storedToken);
     } else if (storedToken) {
-      // Token expired — clear stale data
       localStorage.clear();
       sessionStorage.clear();
     }
@@ -73,8 +93,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const login = (data: AuthData, rememberMe: boolean) => {
     const storage = rememberMe ? localStorage : sessionStorage;
 
-    storage.setItem("user", JSON.stringify(data.user));
-    storage.setItem("role", data.role);
+    //storage.setItem("user", JSON.stringify(data.user));
+    //storage.setItem("role", data.role);
     storage.setItem("token", data.token);
 
     setUser(data.user);
@@ -90,8 +110,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setToken(null);
   };
 
+  const updateUser = (updated: User) => {
+    setUser(updated);
+    // Persist to whichever storage was used at login so a page refresh stays fresh
+    // const serialised = JSON.stringify(updated);
+    // if (localStorage.getItem("user") !== null) {
+    //   localStorage.setItem("user", serialised);
+    // } else {
+    //   sessionStorage.setItem("user", serialised);
+    // }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, role, token, isInitialized, login, logout }}>
+    <AuthContext.Provider value={{ user, role, token, isInitialized, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
