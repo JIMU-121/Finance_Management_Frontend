@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (storedToken && isTokenValid(storedToken)) {
       try {
         const decoded = jwtDecode<JwtPayload>(storedToken);
-        console.log("Decoded JWT:", decoded);
+        // console.log("Decoded JWT:", decoded);
 
         // Split "First Last" into separate fields
         const [firstName = "", ...rest] = decoded.unique_name.split(" ");

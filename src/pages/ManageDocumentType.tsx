@@ -1,260 +1,233 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import Button from "../components/ui/button/Button";
-import Input from "../components/form/input/InputField";
 import Label from "../components/form/Label";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table/index";
-import Badge from "../components/ui/badge/Badge";
+import Input from "../components/form/input/InputField";
+import Button from "../components/ui/button/Button";
+import { showError, showSuccess } from "../utils/toast";
+import { DocType } from "../types/apiTypes";
+import { getAllDocTypes, createDocType, updateDocType, deleteDocType } from "../features/docTypes/docTypeApi";
+import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
+import Spinner from "../components/ui/spinner/Spinner";
+import { PageTabs, PageTab } from "../components/ui/tabs/PageTabs";
+import { ModalShell } from "../components/ui/modal/ModalShell";
 
-interface DocumentType {
-  id: number;
-  name: string;
-  code: string;
-  status: "Active" | "Inactive";
-}
+// ─── DataTable config ─────────────────────────────────────────────────────────
 
-type FormValues = {
-  name: string;
-  code: string;
-};
+const docTypeColumns: ColumnDef<DocType & { id: number }>[] = [
+  {
+    header: "ID",
+    render: (row) => <span className="text-gray-600 dark:text-gray-300">{row.id}</span>,
+  },
+  {
+    header: "Document Type",
+    render: (row) => <span className="block font-semibold text-gray-900 dark:text-white">{row.typeName}</span>,
+  },
+];
 
-export default function ManageDocumentType() {
-  const [view, setView] = useState<"table" | "form">("table");
-  const [documentTypes, setDocumentTypes] = useState<DocumentType[]>([
-    { id: 1, name: "Invoice", code: "INV", status: "Active" },
-    { id: 2, name: "Purchase Order", code: "PO", status: "Active" },
-    { id: 3, name: "Receipt", code: "REC", status: "Inactive" },
-  ]);
+const docTypeDetailFields: DetailField<DocType & { id: number }>[] = [
+  { label: "ID", render: (r) => r.id },
+  { label: "Document Type", render: (r) => r.typeName },
+];
 
-  const [editId, setEditId] = useState<number | null>(null);
+// ─── Edit Modal ───────────────────────────────────────────────────────────────
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors, isValid },
-  } = useForm<FormValues>({
-    mode: "onChange",
-  });
+function EditDocTypeModal({ docType, onClose, onUpdated }: {
+  docType: DocType & { id: number };
+  onClose: () => void;
+  onUpdated: () => void;
+}) {
+  const [typeName, setTypeName] = useState(docType.typeName || "");
+  const [saving, setSaving] = useState(false);
 
-  const codeValue = watch("code");
-  const nameValue = watch("name");
-  const onSubmit = (data: FormValues) => {
-    const upperCode = data.code.toUpperCase();
-
-    if (editId !== null) {
-      //  UPDATE
-      setDocumentTypes((prev) =>
-        prev.map((doc) =>
-          doc.id === editId
-            ? { ...doc, name: data.name, code: upperCode }
-            : doc,
-        ),
-      );
-    } else {
-      //  ADD
-      const newDoc: DocumentType = {
-        id: Date.now(),
-        name: data.name,
-        code: upperCode,
-        status: "Active",
-      };
-      setDocumentTypes((prev) => [...prev, newDoc]);
+  const handleSave = async () => {
+    if (!typeName.trim()) {
+      showError("Document type name is required.");
+      return;
     }
-
-    reset();
-    setEditId(null);
-    setView("table");
+    try {
+      setSaving(true);
+      await updateDocType(docType.id, { typeName });
+      showSuccess("Document Type updated successfully.");
+      onUpdated();
+      onClose();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || "Update failed.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleEdit = (doc: DocumentType) => {
-    setEditId(doc.id);
-    setValue("name", doc.name);
-    setValue("code", doc.code);
-    setView("form");
+  return (
+    <ModalShell
+      title="Edit Document Type"
+      subtitle={`Updating: ${docType.typeName}`}
+      onClose={onClose}
+      maxWidth="lg"
+      saving={saving}
+      onSave={handleSave}
+    >
+      <div>
+        <Label>Document Type Name</Label>
+        <Input value={typeName} onChange={(e: any) => setTypeName(e.target.value)} placeholder="e.g. Aadhar" />
+      </div>
+    </ModalShell>
+  );
+}
+
+// ─── Add Form ─────────────────────────────────────────────────────────────────
+
+export function AddDocTypeForm({ onAdded }: { onAdded: () => void }) {
+  const [typeName, setTypeName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const clearInput = () => setTypeName("");
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!typeName.trim()) {
+      showError("Document type name is required.");
+      return;
+    }
+    try {
+      setSubmitting(true);
+      await createDocType({ typeName });
+      showSuccess("Document Type added successfully.");
+      clearInput();
+      onAdded();
+    } catch (err: any) {
+      showError(err?.response?.data?.message || "Adding document type failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleAdd} className="space-y-6">
+      <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
+        <div className="mb-8 border-b border-gray-200 pb-4 dark:border-gray-800">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Document Type Information</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Provide the necessary details to register a new document type.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Label>Document Type Name <span className="text-red-500">*</span></Label>
+            <Input type="text" value={typeName} onChange={(e: any) => setTypeName(e.target.value)} placeholder="e.g. Aadhar" />
+          </div>
+        </div>
+        <div className="mt-8 flex gap-4 pt-4">
+          <Button type="submit" disabled={submitting} className="bg-brand-500 hover:bg-brand-600 px-6 py-2.5 text-white shadow-theme-xs transition-colors">
+            {submitting ? "Registering..." : "Register Document Type"}
+          </Button>
+          <Button type="button" variant="outline" onClick={clearInput} className="px-6 py-2.5">
+            Clear Form
+          </Button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
+const TABS: PageTab<"add" | "view">[] = [
+  {
+    key: "view",
+    label: "View DocTypes",
+    icon: (
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+      </svg>
+    ),
+  },
+  {
+    key: "add",
+    label: "Add DocType",
+    icon: (
+      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+      </svg>
+    ),
+  },
+];
+
+export default function ManageDocumentType() {
+  const [activeTab, setActiveTab] = useState<"add" | "view">("view");
+  const [docTypes, setDocTypes] = useState<(DocType & { id: number })[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editDocType, setEditDocType] = useState<(DocType & { id: number }) | null>(null);
+
+  const fetchDocTypes = async () => {
+    try {
+      setLoading(true);
+      const res = await getAllDocTypes();
+      setDocTypes((res?.data || res || []) as (DocType & { id: number })[]);
+    } catch (err) {
+      console.error("Failed to fetch doc types", err);
+      showError("Failed to load document types.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "view") fetchDocTypes();
+  }, [activeTab]);
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteDocType(id);
+      showSuccess("Document type deleted successfully.");
+      setDocTypes((prev) => prev.filter((d) => d.id !== id));
+    } catch (err: any) {
+      showError(err?.response?.data?.message || "Failed to delete document type.");
+    }
   };
 
   return (
     <div>
-      <PageMeta
-        title="Document Type | FMS Document Type"
-        description="Manage Document Type"
-      />
-      <PageBreadcrumb pageTitle="Manage Document Type" />
+      <PageMeta title="Manage DocTypes" description="Document Type Management" />
+      <PageBreadcrumb pageTitle="Manage DocTypes" />
 
-      {/*  Toggle Buttons */}
-      <div className="mb-6 flex gap-3">
-        <Button
-          onClick={() => {
-            reset();
-            setEditId(null);
-            setView("table");
-          }}
-          variant={view === "table" ? "primary" : "outline"}
-        >
-          View Document Type
-        </Button>
+      <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
+        <PageTabs tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <Button
-          onClick={() => {
-            reset();
-            setEditId(null);
-            setView("form");
-          }}
-          variant={view === "form" ? "primary" : "outline"}
-        >
-          Add Document Type
-        </Button>
+        <div className="p-6">
+          {activeTab === "add" && (
+            <div className="max-w-3xl">
+              <AddDocTypeForm onAdded={() => setActiveTab("view")} />
+            </div>
+          )}
+
+          {activeTab === "view" && (
+            <>
+              {loading ? (
+                <Spinner size="md" label="Loading DocTypes..." className="py-16" />
+              ) : (
+                <DataTable
+                  data={docTypes}
+                  columns={docTypeColumns}
+                  detailFields={docTypeDetailFields}
+                  onDelete={(id) => handleDelete(id as number)}
+                  onEdit={(row) => setEditDocType(row)}
+                  searchKeys={["typeName"]}
+                  searchPlaceholder="Search by document type..."
+                  title="Document Types"
+                />
+              )}
+            </>
+          )}
+        </div>
       </div>
 
-      {/*  FORM */}
-      {view === "form" && (
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-white/[0.03]"
-        >
-          <h3 className="mb-6 text-lg font-semibold text-gray-800 dark:text-white/90">
-            {editId ? "Edit Document Type" : "Add Document Type"}
-          </h3>
-
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            {/* NAME */}
-            <div>
-              <Label>Document Name</Label>
-              <Input
-                placeholder="Enter document name"
-                value={nameValue || ""}
-                {...register("name", {
-                  required: "Document name is required",
-                  minLength: {
-                    value: 2,
-                    message: "Minimum 2 characters required",
-                  },
-                })}
-                onChange={(e) =>
-                  setValue("name", e.target.value.toUpperCase(), {
-                    shouldValidate: true,
-                  })
-                }
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-
-            {/*  CODE */}
-            <div>
-              <Label>Document Code</Label>
-              <Input
-                placeholder="Enter document code"
-                value={codeValue || ""}
-                {...register("code", {
-                  required: "Document code is required",
-                  minLength: {
-                    value: 2,
-                    message: "Minimum 2 characters required",
-                  },
-                })}
-                onChange={(e) =>
-                  setValue("code", e.target.value.toUpperCase(), {
-                    shouldValidate: true,
-                  })
-                }
-              />
-              {errors.code && (
-                <p className="mt-1 text-sm text-red-500">
-                  {errors.code.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <Button disabled={!isValid}>
-              {editId ? "Update Document Type" : "Save Document Type"}
-            </Button>
-          </div>
-        </form>
-      )}
-
-      {/* TABLE */}
-      {view === "table" && (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:text-amber-50 dark:bg-white/[0.03]">
-          <div className="max-w-full overflow-x-auto">
-            <Table>
-              <TableHeader className="border-b border-gray-100">
-                <TableRow>
-                  <TableCell isHeader className="px-5 py-3 text-start">
-                    ID
-                  </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start">
-                    Name
-                  </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start">
-                    Code
-                  </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start">
-                    Status
-                  </TableCell>
-                  <TableCell isHeader className="px-5 py-3 text-start">
-                    Action
-                  </TableCell>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="divide-y divide-gray-100">
-                {documentTypes.map((doc) => (
-                  <TableRow key={doc.id}>
-                    <TableCell className="px-5 py-4">{doc.id}</TableCell>
-                    <TableCell className="px-5 py-4">{doc.name}</TableCell>
-                    <TableCell className="px-5 py-4">{doc.code}</TableCell>
-                    <TableCell className="px-5 py-4">
-                      <Badge
-                        size="sm"
-                        color={doc.status === "Active" ? "success" : "error"}
-                      >
-                        {doc.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="px-5 py-4">
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(doc)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            setDocumentTypes((prev) =>
-                              prev.filter((d) => d.id !== doc.id),
-                            )
-                          }
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+      {editDocType && (
+        <EditDocTypeModal
+          docType={editDocType}
+          onClose={() => setEditDocType(null)}
+          onUpdated={fetchDocTypes}
+        />
       )}
     </div>
   );

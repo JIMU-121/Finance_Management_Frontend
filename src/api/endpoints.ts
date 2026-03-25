@@ -13,7 +13,13 @@ export const API_ENDPOINTS = {
     CREATE: `${API_PREFIX}/user`,
     UPDATE: (id: number) => `${API_PREFIX}/user/${id}`,
     DELETE: (id: number) => `${API_PREFIX}/user/${id}`,
-    PATCH : (id: number) => `${API_PREFIX}/user/${id}`
+    PATCH: (id: number) => `${API_PREFIX}/user/${id}`
+  },
+  PARTNER: {
+    GET_ALL: `${API_PREFIX}/Partner`,
+    GET_BY_USER_ID: (userId: number) => `${API_PREFIX}/getUser-Partner/${userId}`,
+    CREATE: `${API_PREFIX}/partner`,
+    PATCH: (id: number) => `${API_PREFIX}/partner/${id}`,
   },
   PROJECT: {
     BASE: `${API_PREFIX}/projects`,
@@ -23,14 +29,59 @@ export const API_ENDPOINTS = {
     UPDATE: (id: number) => `${API_PREFIX}/projects/${id}`,
     DELETE: (id: number) => `${API_PREFIX}/projects/${id}`,
     PATCH: (id: number) => `${API_PREFIX}/projects/${id}`,
+    ASSIGN_EMPLOYEE: `${API_PREFIX}/Projects/assign-employee`,
+    UNASSIGN_EMPLOYEE: (projectId: number, employeeId: number) => 
+      `${API_PREFIX}/Projects/unassign-employee?projectId=${projectId}&employeeId=${employeeId}`,
+    GET_PROJECT_EMPLOYEES: (projectId: number) =>
+      `${API_PREFIX}/Projects/${projectId}/employees`,
   },
   EMPLOYEE: {
-    BASE: `${API_PREFIX}/employees`,
-    GET_ALL: `${API_PREFIX}/employees`,
+    BASE: `${API_PREFIX}/employee`,
+    GET_ALL: `${API_PREFIX}/employee`,
     GET_BY_ID: (id: number) => `${API_PREFIX}/employee/${id}`,
-    CREATE: `${API_PREFIX}/employees`,
-    UPDATE: (id: number) => `${API_PREFIX}/employees/${id}`,
-    DELETE: (id: number) => `${API_PREFIX}/employees/${id}`,
-    PATCH: (id: number) => `${API_PREFIX}/employees/${id}`,
+    GET_BY_USER_ID: (userId: number) => `${API_PREFIX}/employee/user/${userId}`,
+    CREATE: `${API_PREFIX}/employee`,
+    UPDATE: (id: number) => `${API_PREFIX}/employee/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/employee/${id}`,
+    PATCH: (id: number) => `${API_PREFIX}/employee/${id}`,
+  },
+  ASSET: {
+    BASE: `${API_PREFIX}/Asset`,
+    GET_ALL: `${API_PREFIX}/Asset`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/Asset/${id}`,
+    CREATE: `${API_PREFIX}/Asset`,
+    UPDATE: (id: number) => `${API_PREFIX}/Asset/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/Asset/${id}`,
+  },
+  EXPENSE: {
+    BASE: `${API_PREFIX}/Expense`,
+    GET_ALL: `${API_PREFIX}/Expense`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/Expense/${id}`,
+    CREATE: `${API_PREFIX}/Expense`,
+    UPDATE: (id: number) => `${API_PREFIX}/Expense/${id}`,
+    PATCH: (id: number) => `${API_PREFIX}/Expense/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/Expense/${id}`,
+    APPROVE: (id: number) => `${API_PREFIX}/Expense/${id}/approve`,
+  },
+  DOCTYPE: {
+    BASE: `${API_PREFIX}/DocType`,
+    GET_ALL: `${API_PREFIX}/DocType`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/DocType/${id}`,
+    CREATE: `${API_PREFIX}/DocType`,
+    UPDATE: (id: number) => `${API_PREFIX}/DocType/${id}`,
+    PATCH: (id: number) => `${API_PREFIX}/DocType/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/DocType/${id}`,
+  },
+  REVENUE: {
+    BASE: `${API_PREFIX}/Revenue`,
+    GET_ALL: `${API_PREFIX}/Revenue`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/Revenue/${id}`,
+    CREATE: `${API_PREFIX}/Revenue`,
+    UPDATE: (id: number) => `${API_PREFIX}/Revenue/${id}`,
+    PATCH: (id: number) => `${API_PREFIX}/Revenue/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/Revenue/${id}`,
+  },
+  EMPLOYEE_DOCUMENT: {
+    UPLOAD: `${API_PREFIX}/EmployeeDocument/upload`,
   }
 } as const;

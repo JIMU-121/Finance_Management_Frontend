@@ -26,12 +26,15 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [{ name: "Ecommerce", path: "/", pro: false }],
+    subItems: [
+      { name: "Ecommerce", path: "/", pro: false },
+      { name: "Employee", path: "/employee-dashboard", pro: false },
+    ],
   },
   {
     icon: <Handshake />,
     name: "Manage Partners",
-    path: "/calendar",
+    path: "/manage-partner",
   },
   {
     icon: <EmployeeeIcon />,
@@ -49,6 +52,16 @@ const navItems: NavItem[] = [
     path: "/document-type"
   },
   {
+    icon: <FileText />,
+    name: "Manage Asset",
+    path: "/manage-asset"
+  },
+  {
+    icon: <FileText />,
+    name: "Manage Expense",
+    path: "/manage-expense"
+  },
+  {
     icon: <UserCircleIcon />,
     name: "My Profile",
     path: "/profile",
@@ -57,11 +70,11 @@ const navItems: NavItem[] = [
     icon: <Projector />,
     name: "Manage Project",
     path: "/manage-project",
-    subItems: [
-      { name: "Add Project", path: "/add-project", pro: false },
-      { name: "View Project", path: "/view-project", pro: true },
-      { name: "Assign Project", path: "/assign-project", pro: true }
-    ],
+  },
+  {
+    icon: <FileText />,
+    name: "Manage Revenue",
+    path: "/manage-revenue",
   },
 
   // {

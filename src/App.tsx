@@ -17,16 +17,18 @@ import Blank from "./pages/Blank";
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
 import Home from "./pages/Dashboard/Home";
+import EmployeeDashboard from "./pages/Dashboard/EmployeeDashboard";
 import Profile from "./pages/UserProfiles";
 import ManageUser from "./pages/ManageUser";
+import ManagePartners from "./pages/ManagePartners";
 import ManageEmployees from "./pages/ManageEmployees";
 import ManageDocumentType from "./pages/ManageDocumentType";
-import ManageProject from "./pages/Manage-Project/ManageProject";
+import ManageAsset from "./pages/Manage-Asset";
+import ManageExpense from "./pages/Manage-Expense";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Add from "./pages/Manage-Project/AddProject";
-import View from "./pages/Manage-Project/ViewProject";
-import Assign from "./pages/Manage-Project/AssignProject";
+import ManageProject from "./pages/Manage-Project";
+import ManageRevenue from "./pages/Manage-Revenue";
 import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
 
 export default function App() {
@@ -37,20 +39,23 @@ export default function App() {
         <Routes>
 
           {/* ── Protected: must be logged in with a valid token ── */}
-          <Route element={<ProtectedRoute />}>
+          <Route element={<ProtectedRoute allowedRoles={"Admin"} />}>
             <Route element={<AppLayout />}>
               <Route index path="/" element={<Home />} />
+              <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
 
               {/* Others Page */}
               <Route path="/profile" element={<Profile />} />
+              <Route path="/manage-partner" element={<ManagePartners />} />
               <Route path="/manage-user" element={<ManageUser />} />
               <Route path="/manage-employees" element={<ManageEmployees />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/document-type" element={<ManageDocumentType />} />
+              <Route path="/manage-asset" element={<ManageAsset />} />
+              <Route path="/manage-expense" element={<ManageExpense />} />
               <Route path="/blank" element={<Blank />} />
-              <Route path="/add-project" element={<Add />} />
-              <Route path="/view-project" element={<View />} />
-              <Route path="/assign-project" element={<Assign />} />
+              <Route path="/manage-project" element={<ManageProject />} />
+              <Route path="/manage-revenue" element={<ManageRevenue />} />
 
               {/* Forms */}
               <Route path="/form-elements" element={<FormElements />} />
@@ -86,7 +91,7 @@ export default function App() {
 
       {/* React Toastify */}
       <ToastContainer
-        position="top-right"
+        position="bottom-right"
         autoClose={3000}
         hideProgressBar={false}
         newestOnTop

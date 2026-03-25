@@ -1,35 +1,8 @@
 import { apiService } from "../../api/apiService";
 import { API_ENDPOINTS } from "../../api/endpoints";
 
-export interface User {
-  id: number;
-  username: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: string;
-}
-
-export interface RegisterUserPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  role: Number;
-}
-
-export interface PatchUserPayload {
-  username?: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  mobileNumber?: string;
-  emergencyMobileNumber?: string;
-  gender?: number;
-  password?: string;
-  role?: Number;
-}
+import { User, RegisterUserPayload, PatchUserPayload } from "../../types/apiTypes";
+export type { User, RegisterUserPayload, PatchUserPayload };
 
 /** Single source of truth for the UserGender C# enum */
 export const genderToEnum: Record<string, number> = {
@@ -49,7 +22,7 @@ export const GENDER_OPTIONS = Object.entries(genderToEnum).map(
 );
 
 
-export const getAllUsers = async (pageNumber: number = 1, pageSize: number = 10): Promise<{ data: User[]; total: number }> => {
+export const getAllUsers = async (pageNumber: number = 1, pageSize: number = 50): Promise<{ data: User[]; total: number }> => {
 
   const body = await apiService.get<any>(`${API_ENDPOINTS.USERS.GET_ALL}?PageNumber=${pageNumber}&PageSize=${pageSize}`);
 
@@ -64,7 +37,7 @@ export const getAllUsers = async (pageNumber: number = 1, pageSize: number = 10)
     else if (Array.isArray(body.data)) data = body.data;
     else if (Array.isArray(body.$values)) data = body.$values;
     else data = [];
-    
+
     total = body.totalCount ?? body.totalRecords ?? body.total ?? data.length;
   }
 

@@ -1,23 +1,11 @@
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export type StepIndicatorProps = {
-    /** Labels for each step, e.g. ["Project Details", "Manager Info", ...] */
     steps: string[];
-    /** 1-based index of the currently active step */
     currentStep: number;
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
 
-/**
- * A horizontal (responsive: vertical on mobile) multi-step progress indicator.
- *
- * Usage:
- *   <StepIndicator
- *     steps={["Project Details", "Manager Info", "Client Info", "Additional Details"]}
- *     currentStep={step}
- *   />
- */
 export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
     const total = steps.length;
     // Progress bar fills proportionally between the first and last circle centres

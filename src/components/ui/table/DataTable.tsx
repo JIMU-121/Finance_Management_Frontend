@@ -1,15 +1,12 @@
 import { useState, ReactNode } from "react";
 import { ConfirmModal } from "../modal/ConfirmModal";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { DetailsModal } from "./DetailsModal";
 
 export type ColumnDef<T> = {
-    /** Column header label */
+
     header: string;
-    /** Key of the row object OR a custom render function */
     accessor?: keyof T;
     render?: (row: T) => ReactNode;
-    /** Extra td class names */
     className?: string;
 };
 
@@ -19,36 +16,24 @@ export type DetailField<T> = {
 };
 
 export type StatusConfig<T> = {
-    /** Return true = "active" (green), false = "inactive" (red) */
     isActive: (row: T) => boolean;
     activeLabel?: string;
     inactiveLabel?: string;
 };
 
 export type DataTableProps<T extends { id: number }> = {
-    /** Rows to display */
+
     data: T[];
-    /** Column definitions (excluding the Actions column) */
     columns: ColumnDef<T>[];
-    /** Fields shown inside the Details modal */
     detailFields?: DetailField<T>[];
-    /** Called when Delete is confirmed — receives the row id */
     onDelete?: (id: number) => void;
-    /** Called when Edit icon is clicked */
     onEdit?: (row: T) => void;
-    /** Search placeholder text */
     searchPlaceholder?: string;
-    /** Keys to search across */
     searchKeys?: (keyof T)[];
-    /** Table title shown in toolbar */
     title?: string;
-    /** Hide the details icon */
     hideDetails?: boolean;
-    /** Hide the edit icon */
     hideEdit?: boolean;
-    /** Hide the delete icon */
     hideDelete?: boolean;
-    /** Pagination options */
     pagination?: {
         pageNumber: number;
         pageSize: number;
@@ -58,78 +43,6 @@ export type DataTableProps<T extends { id: number }> = {
         pageSizeOptions?: number[];
     };
 };
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function DetailsModal<T extends { id: number }>({
-    row,
-    fields,
-    title,
-    onClose,
-}: {
-    row: T;
-    fields: DetailField<T>[];
-    title?: string;
-    onClose: () => void;
-}) {
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div
-                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-                onClick={onClose}
-            />
-            <div className="relative z-10 mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
-                {/* Header */}
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
-                    <div>
-                        <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {title ?? "Details"}
-                        </h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Full record details
-                        </p>
-                    </div>
-                    <button
-                        onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
-                    >
-                        <svg
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                            />
-                        </svg>
-                    </button>
-                </div>
-                {/* Body */}
-                <div className="p-6">
-                    <dl className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
-                        {fields.map(({ label, render }) => (
-                            <div
-                                key={label}
-                                className="rounded-lg bg-gray-50 px-4 py-3 dark:bg-gray-800/60"
-                            >
-                                <dt className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                    {label}
-                                </dt>
-                                <dd className="mt-1 break-words text-sm font-semibold text-gray-800 dark:text-white">
-                                    {String(render(row))}
-                                </dd>
-                            </div>
-                        ))}
-                    </dl>
-                </div>
-            </div>
-        </div>
-    );
-}
 
 
 // ─── Main DataTable ───────────────────────────────────────────────────────────
@@ -212,9 +125,9 @@ export function DataTable<T extends { id: number }>({
                 </div>
 
                 {/* ── Table ── */}
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
                     <table className="w-full text-sm">
-                        <thead>
+                        <thead className="sticky top-0 z-10">
                             <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
                                 <th className="whitespace-nowrap px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                     #
@@ -228,7 +141,7 @@ export function DataTable<T extends { id: number }>({
                                     </th>
                                 ))}
                                 {showActions && (
-                                    <th className="whitespace-nowrap px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                                    <th className="whitespace-nowrap px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                         Actions
                                     </th>
                                 )}
@@ -270,7 +183,7 @@ export function DataTable<T extends { id: number }>({
                                         {/* Actions */}
                                         {showActions && (
                                             <td className="whitespace-nowrap px-5 py-3.5">
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center justify-end gap-1">
                                                     {/* Details */}
                                                     {!hideDetails && detailFields && (
                                                         <button
@@ -421,6 +334,7 @@ export function DataTable<T extends { id: number }>({
                 <DetailsModal
                     row={detailRow}
                     fields={detailFields}
+                    title={title}
                     onClose={() => setDetailRow(null)}
                 />
             )}
