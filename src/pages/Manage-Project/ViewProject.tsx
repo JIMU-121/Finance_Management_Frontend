@@ -16,6 +16,7 @@ import {
 } from "../../features/projects/projectAPI";
 import { getAllEmployees } from "../../features/users/employeeApi";
 import { getAllUsers } from "../../features/users/userApi";
+import { getAllProfiles } from "../../api/ProfileApi";
 import { RegisterProjectPayload, AssignedEmployee } from "../../types/apiTypes";
 
 function EmployeeAvatars({
@@ -94,6 +95,13 @@ function EditProjectModal({
 }) {
   const [formData, setFormData] = useState<Project>({ ...project });
   const [saving, setSaving] = useState(false);
+  const [profiles, setProfiles] = useState<any[]>([]);
+
+  useEffect(() => {
+    getAllProfiles()
+      .then(setProfiles)
+      .catch(() => console.error("Failed to load profiles"));
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -187,6 +195,22 @@ function EditProjectModal({
           <div>
             <Label>Technology Stack</Label>
             <Input name="technologyStack" value={formData.technologyStack} onChange={handleChange} placeholder="React, .NET Core..." />
+          </div>
+          <div>
+            <Label>Project Profile</Label>
+            <select 
+              name="profileId" 
+              value={formData.profileId ?? ""} 
+              onChange={handleChange} 
+              className={selectClass}
+            >
+              <option value="">Select Profile</option>
+              {profiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  Profile #{profile.id}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <Label>Project Value (₹)</Label>
