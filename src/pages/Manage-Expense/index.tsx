@@ -20,6 +20,8 @@ import { getAllUsers, User } from "../../features/users/userApi";
 import { getPartnerByUserId } from "../../features/users/partnerApi";
 import { DataTable, ColumnDef, DetailField } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
+import { ModalShell } from "../../components/ui/modal/ModalShell";
+import { useAuth } from "../../context/AuthContext";
 
 export enum ExpenseCategory {
   Office = 1,
@@ -39,9 +41,22 @@ export const ExpenseCategoryOptions = [
   { value: "6", label: "Other" },
 ];
 
-export const getCategoryLabel = (id: number) => {
-  const category = ExpenseCategoryOptions.find(c => c.value === String(id));
-  return category ? category.label : "Unknown";
+export const getCategoryLabel = (cat: number | string) => {
+  if (cat === undefined || cat === null) return "Unknown";
+  const strCat = String(cat).trim().toLowerCase();
+  const category = ExpenseCategoryOptions.find(
+    (c) => c.value === String(cat) || c.label.toLowerCase() === strCat
+  );
+  return category ? category.label : String(cat);
+};
+
+export const getCategoryValue = (cat: number | string) => {
+  if (cat === undefined || cat === null) return "1";
+  const strCat = String(cat).trim().toLowerCase();
+  const category = ExpenseCategoryOptions.find(
+    (c) => c.value === String(cat) || c.label.toLowerCase() === strCat
+  );
+  return category ? category.value : "1";
 };
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
@@ -91,8 +106,11 @@ const getExpenseColumns = (onApprove: (id: number) => void): ColumnDef<Expense &
           {!isApproved && (
             <button
               onClick={() => onApprove(row.id)}
-              className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline"
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500/20 transition-all border border-emerald-200 dark:border-emerald-500/20 shadow-sm hover:shadow-md"
             >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+              </svg>
               Approve
             </button>
           )}
@@ -130,7 +148,7 @@ function EditExpenseModal({
   onUpdated: () => void;
   assets: Asset[];
   refreshAssets: () => void;
-  partners: User[];
+  partners: (User & { partnerId: number })[];
 }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [description, setDescription] = useState(expense.description || "");
@@ -138,7 +156,7 @@ function EditExpenseModal({
   const [assetId, setAssetId] = useState<number | string>(expense.assetId || 0);
   const [partnerId, setPartnerId] = useState<number | string>(expense.partnerId || 0);
   const [employeeId, setEmployeeId] = useState<number | string>(expense.employeeId || 0);
-  const [category, setCategory] = useState<number | string>(expense.category || 1);
+  const [category, setCategory] = useState<number | string>(getCategoryValue(expense.category));
   const [month, setMonth] = useState<number | string>(expense.month || "");
   const [year, setYear] = useState<number | string>(expense.year || "");
   const [isRecurring, setIsRecurring] = useState(expense.isRecurring || false);
@@ -174,154 +192,125 @@ function EditExpenseModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-          <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Edit Expense</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Updating Expense #{expense.id}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+    <ModalShell
+      title="Edit Expense"
+      subtitle={`Updating Expense #${expense.id}`}
+      onClose={onClose}
+      maxWidth="2xl"
+      onSave={handleSave}
+      saving={saving}
+      saveLabel="Save Changes"
+    >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="md:col-span-2">
+          <Label>Description <span className="text-red-500">*</span></Label>
+          <Input value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="Office Supplies" />
         </div>
 
-        <div className="space-y-4 p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <Label>Description <span className="text-red-500">*</span></Label>
-              <Input value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="Office Supplies" />
-            </div>
-
-            <div>
-              <Label>Amount (₹) <span className="text-red-500">*</span></Label>
-              <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="0" />
-            </div>
-            <div>
-              <Label>Category <span className="text-red-500">*</span></Label>
-              <Select
-                options={ExpenseCategoryOptions}
-                value={String(category)}
-                onChange={(val) => setCategory(Number(val))}
-              />
-            </div>
-
-            <div>
-              <Label>Month (1-12) <span className="text-red-500">*</span></Label>
-              <Input type="number" value={month} onChange={(e: any) => setMonth(e.target.value)} placeholder="3" min="1" max="12" />
-            </div>
-            <div>
-              <Label>Year <span className="text-red-500">*</span></Label>
-              <Input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} placeholder="2026" />
-            </div>
-
-            <div>
-              <Label>Asset ID</Label>
-              <div className="flex items-center gap-2">
-                <Select
-                  options={[{ value: "0", label: "None" }, ...assets.map(a => ({ value: String(a.id), label: `${a.name} (ID: ${a.id})` }))]}
-                  value={String(assetId || "0")}
-                  onChange={(val) => setAssetId(Number(val))}
-                />
-                <Button type="button" onClick={() => setIsAssetModalOpen(true)} className="px-3 py-2 text-xs h-11 whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 shadow-none border border-gray-200 dark:border-gray-700">
-                  + Add New
-                </Button>
-              </div>
-            </div>
-            <div>
-              <Label>Partner ID</Label>
-              <Select
-                options={[{ value: "0", label: "None" }, ...partners.map((p: User) => ({ value: String(p.id), label: `${p.firstName} ${p.lastName} (ID: ${p.id})` }))]}
-                value={String(partnerId || "0")}
-                onChange={(val) => setPartnerId(Number(val))}
-              />
-            </div>
-            <div>
-              <Label>Employee ID</Label>
-              <Input type="number" value={employeeId} onChange={(e: any) => setEmployeeId(e.target.value)} placeholder="0" />
-            </div>
-
-            <div className="flex items-center gap-3 pt-6 md:col-span-2">
-              <input
-                type="checkbox"
-                id="editIsRecurring"
-                checked={isRecurring}
-                onChange={(e) => setIsRecurring(e.target.checked)}
-                className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-900"
-              />
-              <Label htmlFor="editIsRecurring" className="!mb-0">This is a recurring expense</Label>
-            </div>
-          </div>
+        <div>
+          <Label>Amount (₹) <span className="text-red-500">*</span></Label>
+          <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="0" />
+        </div>
+        <div>
+          <Label>Category <span className="text-red-500">*</span></Label>
+          <Select
+            options={ExpenseCategoryOptions}
+            value={String(category)}
+            onChange={(val) => setCategory(Number(val))}
+          />
         </div>
 
-        <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 px-6 py-5 dark:border-gray-800 sticky bottom-0 bg-white dark:bg-gray-900 z-10">
-          <Button variant="outline" onClick={onClose} className="px-5 py-2">Cancel</Button>
-          <Button onClick={handleSave} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 shadow-theme-xs transition-colors" disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+        <div>
+          <Label>Month (1-12) <span className="text-red-500">*</span></Label>
+          <Input type="number" value={month} onChange={(e: any) => setMonth(e.target.value)} placeholder="3" min="1" max="12" />
+        </div>
+        <div>
+          <Label>Year <span className="text-red-500">*</span></Label>
+          <Input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} placeholder="2026" />
+        </div>
+
+        <div>
+          <Label>Asset ID</Label>
+          <div className="flex items-center gap-2">
+            <Select
+              options={[{ value: "0", label: "None" }, ...assets.map(a => ({ value: String(a.id), label: `${a.name} (ID: ${a.id})` }))]}
+              value={String(assetId || "0")}
+              onChange={(val) => setAssetId(Number(val))}
+            />
+            <Button type="button" onClick={() => setIsAssetModalOpen(true)} className="px-3 py-2 text-xs h-11 whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 shadow-none border border-gray-200 dark:border-gray-700">
+              + Add New
+            </Button>
+          </div>
+        </div>
+        <div>
+          <Label>Partner ID</Label>
+          <Select
+            options={[{ value: "0", label: "None" }, ...partners.map(p => ({ value: String(p.partnerId), label: `${p.firstName} ${p.lastName} (P-ID: ${p.partnerId})` }))]}
+            value={String(partnerId || "0")}
+            onChange={(val) => setPartnerId(Number(val))}
+          />
+        </div>
+        <div>
+          <Label>Employee ID</Label>
+          <Input type="number" value={employeeId} onChange={(e: any) => setEmployeeId(e.target.value)} placeholder="0" />
+        </div>
+
+        <div className="flex items-center gap-3 pt-6 md:col-span-2">
+          <input
+            type="checkbox"
+            id="editIsRecurring"
+            checked={isRecurring}
+            onChange={(e) => setIsRecurring(e.target.checked)}
+            className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-900"
+          />
+          <Label htmlFor="editIsRecurring" className="!mb-0">This is a recurring expense</Label>
         </div>
       </div>
 
       {isAssetModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsAssetModalOpen(false)} />
-          <div className="relative z-20 mx-4 w-full max-w-3xl rounded-2xl bg-white shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Register New Asset</h2>
-              <button
-                onClick={() => setIsAssetModalOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6">
-              <AddAssetForm onAdded={(newAssetId) => {
-                refreshAssets();
-                if (newAssetId) setAssetId(newAssetId);
-                setIsAssetModalOpen(false);
-              }} />
-            </div>
-          </div>
-        </div>
+        <ModalShell
+          title="Register New Asset"
+          onClose={() => setIsAssetModalOpen(false)}
+          maxWidth="3xl"
+          hideFooter={true}
+        >
+          <AddAssetForm onAdded={async (newAssetId?: number) => {
+            await refreshAssets();
+            if (newAssetId) setAssetId(newAssetId);
+            setIsAssetModalOpen(false);
+          }} />
+        </ModalShell>
       )}
-    </div>
+    </ModalShell>
   );
 }
 
 // ─── Add Form ────────────────────────────────────────────────────────────
 
-function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded: () => void; assets: Asset[]; refreshAssets: () => void; partners: User[]; }) {
+function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded: () => void; assets: Asset[]; refreshAssets: () => void; partners: (User & { partnerId: number })[]; }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-  const currentMonth = new Date().getMonth() + 1;
-  const currentYear = new Date().getFullYear();
 
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState<number | string>("");
-  const [assetId, setAssetId] = useState<number | string>(0);
-  const [partnerId, setPartnerId] = useState<number | string>(0);
-  const [employeeId, setEmployeeId] = useState<number | string>(0);
-  const [category, setCategory] = useState<number | string>(1);
-  const [month, setMonth] = useState<number | string>(currentMonth);
-  const [year, setYear] = useState<number | string>(currentYear);
+  const [assetId, setAssetId] = useState<number | string>("");
+  const [partnerId, setPartnerId] = useState<number | string>("");
+  const [employeeId, setEmployeeId] = useState<number | string>("");
+  const [category, setCategory] = useState<number | string>("");
+  const [month, setMonth] = useState<number | string>("");
+  const [year, setYear] = useState<number | string>("");
   const [isRecurring, setIsRecurring] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
 
   const clearInput = () => {
-    setDescription(""); setAmount("");
-    setAssetId(0); setPartnerId(0); setEmployeeId(0);
-    setCategory(1); setMonth(currentMonth); setYear(currentYear);
+    setDescription("");
+    setAmount("");
+    setAssetId("");
+    setPartnerId("");
+    setEmployeeId("");
+    setCategory("");
+    setMonth("");
+    setYear("");
     setIsRecurring(false);
   };
 
@@ -355,139 +344,132 @@ function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded:
   };
 
   return (
-    <form onSubmit={handleAdd} className="space-y-6">
-      <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
-        <div className="mb-8 border-b border-gray-200 pb-4 dark:border-gray-800">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            Expense Information
-          </h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Provide the necessary details to register a new expense into the ledger.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <div className="md:col-span-2 lg:col-span-3">
-            <Label>Description <span className="text-red-500">*</span></Label>
-            <Input type="text" value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="e.g. Server Hosting Fees" />
+    <>
+      <form onSubmit={handleAdd} className="space-y-6">
+        <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
+          <div className="mb-8 border-b border-gray-200 pb-4 dark:border-gray-800">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              Expense Information
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Provide the necessary details to register a new expense into the ledger.
+            </p>
           </div>
 
-          <div>
-            <Label>Amount (₹) <span className="text-red-500">*</span></Label>
-            <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="e.g. 1500" />
-          </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <div className="md:col-span-2 lg:col-span-3">
+              <Label>Description <span className="text-red-500">*</span></Label>
+              <Input type="text" value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="e.g. Server Hosting Fees" />
+            </div>
 
-          <div>
-            <Label>Category <span className="text-red-500">*</span></Label>
-            <Select
-              options={ExpenseCategoryOptions}
-              value={String(category)}
-              onChange={(val) => setCategory(Number(val))}
-            />
-          </div>
+            <div>
+              <Label>Amount (₹) <span className="text-red-500">*</span></Label>
+              <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="e.g. 1500" />
+            </div>
 
-          <div className="flex items-center gap-3 pt-[34px]">
-            <input
-              type="checkbox"
-              id="isRecurring"
-              checked={isRecurring}
-              onChange={(e) => setIsRecurring(e.target.checked)}
-              className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-900"
-            />
-            <Label htmlFor="isRecurring" className="!mb-0 cursor-pointer">Recurring Expense</Label>
-          </div>
-
-          {/* Period Details */}
-          <div className="mt-2 md:col-span-2 lg:col-span-3 border-t border-gray-200 pt-6 dark:border-gray-800">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Period & References</h4>
-          </div>
-
-          <div>
-            <Label>Month (1-12) <span className="text-red-500">*</span></Label>
-            <Input type="number" value={month} onChange={(e: any) => setMonth(e.target.value)} min="1" max="12" />
-          </div>
-
-          <div>
-            <Label>Year <span className="text-red-500">*</span></Label>
-            <Input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Asset ID (Optional)</Label>
-            <div className="flex items-center gap-2">
+            <div>
+              <Label>Category <span className="text-red-500">*</span></Label>
               <Select
-                options={[{ value: "0", label: "None" }, ...assets.map(a => ({ value: String(a.id), label: `${a.name} (ID: ${a.id})` }))]}
-                value={String(assetId || "0")}
-                onChange={(val) => setAssetId(Number(val))}
+                options={ExpenseCategoryOptions}
+                value={String(category)}
+                onChange={(val) => setCategory(Number(val))}
+                placeholder="Select Category"
               />
-              <Button type="button" onClick={() => setIsAssetModalOpen(true)} className="px-3 py-2 text-xs h-11 whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 shadow-none border border-gray-200 dark:border-gray-700">
-                + Add New
-              </Button>
+            </div>
+
+            <div className="flex items-center gap-3 pt-[34px]">
+              <input
+                type="checkbox"
+                id="isRecurring"
+                checked={isRecurring}
+                onChange={(e) => setIsRecurring(e.target.checked)}
+                className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:ring-offset-gray-900"
+              />
+              <Label htmlFor="isRecurring" className="!mb-0 cursor-pointer">Recurring Expense</Label>
+            </div>
+
+            {/* Period Details */}
+            <div className="mt-2 md:col-span-2 lg:col-span-3 border-t border-gray-200 pt-6 dark:border-gray-800">
+              <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Period & References</h4>
+            </div>
+
+            <div>
+              <Label>Month (1-12) <span className="text-red-500">*</span></Label>
+              <Input type="number" value={month} onChange={(e: any) => setMonth(e.target.value)} min="1" max="12" />
+            </div>
+
+            <div>
+              <Label>Year <span className="text-red-500">*</span></Label>
+              <Input type="number" value={year} onChange={(e: any) => setYear(e.target.value)} />
+            </div>
+
+            <div>
+              <Label>Asset ID (Optional)</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  options={[{ value: "0", label: "None" }, ...assets.map(a => ({ value: String(a.id), label: `${a.name} (ID: ${a.id})` }))]}
+                  value={String(assetId)}
+                  onChange={(val) => setAssetId(Number(val))}
+                  placeholder="Select Asset"
+                />
+                <Button type="button" onClick={() => setIsAssetModalOpen(true)} className="px-3 py-2 text-xs h-11 whitespace-nowrap bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-300 shadow-none border border-gray-200 dark:border-gray-700">
+                  + Add New
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label>Partner ID (Optional)</Label>
+              <Select
+                options={[{ value: "0", label: "None" }, ...partners.map((p) => ({ value: String(p.partnerId), label: `${p.firstName} ${p.lastName} (P-ID: ${p.partnerId})` }))]}
+                value={String(partnerId)}
+                onChange={(val) => setPartnerId(Number(val))}
+                placeholder="Select Partner"
+              />
+            </div>
+
+            <div>
+              <Label>Employee ID (Optional)</Label>
+              <Input type="number" value={employeeId} onChange={(e: any) => setEmployeeId(e.target.value)} placeholder="e.g. 101" />
             </div>
           </div>
 
-          <div>
-            <Label>Partner ID (Optional)</Label>
-            <Select
-              options={[{ value: "0", label: "None" }, ...partners.map((p: User) => ({ value: String(p.id), label: `${p.firstName} ${p.lastName} (ID: ${p.id})` }))]}
-              value={String(partnerId || "0")}
-              onChange={(val) => setPartnerId(Number(val))}
-            />
-          </div>
-
-          <div>
-            <Label>Employee ID (Optional)</Label>
-            <Input type="number" value={employeeId} onChange={(e: any) => setEmployeeId(e.target.value)} placeholder="0" />
+          <div className="mt-8 flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="bg-brand-500 hover:bg-brand-600 px-6 py-2.5 text-white shadow-theme-xs transition-colors"
+            >
+              {submitting ? "Registering..." : "Register Expense"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={clearInput}
+              className="px-6 py-2.5"
+            >
+              Clear Form
+            </Button>
           </div>
         </div>
 
-        <div className="mt-8 flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="bg-brand-500 hover:bg-brand-600 px-6 py-2.5 text-white shadow-theme-xs transition-colors"
-          >
-            {submitting ? "Registering..." : "Register Expense"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={clearInput}
-            className="px-6 py-2.5"
-          >
-            Clear Form
-          </Button>
-        </div>
-      </div>
+      </form>
 
       {isAssetModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsAssetModalOpen(false)} />
-          <div className="relative z-20 mx-4 w-full max-w-3xl rounded-2xl bg-white shadow-2xl dark:bg-gray-900 border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10">
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Register New Asset</h2>
-              <button
-                type="button"
-                onClick={() => setIsAssetModalOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-              >
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="p-6">
-              <AddAssetForm onAdded={(newAssetId) => {
-                refreshAssets();
-                if (newAssetId) setAssetId(newAssetId);
-                setIsAssetModalOpen(false);
-              }} />
-            </div>
-          </div>
-        </div>
+        <ModalShell
+          title="Register New Asset"
+          onClose={() => setIsAssetModalOpen(false)}
+          maxWidth="3xl"
+          hideFooter={true}
+        >
+          <AddAssetForm onAdded={async (newAssetId?: number) => {
+            await refreshAssets();
+            if (newAssetId) setAssetId(newAssetId);
+            setIsAssetModalOpen(false);
+          }} />
+        </ModalShell>
       )}
-
-    </form>
+    </>
   );
 }
 
@@ -497,9 +479,11 @@ export default function ManageExpense() {
   const [activeTab, setActiveTab] = useState<"view" | "add">("view");
   const [expenses, setExpenses] = useState<(Expense & { id: number })[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [partners, setPartners] = useState<User[]>([]);
+  const [partners, setPartners] = useState<(User & { partnerId: number })[]>([]);
   const [loading, setLoading] = useState(false);
   const [editExpense, setEditExpense] = useState<(Expense & { id: number }) | null>(null);
+
+  const { user } = useAuth();
 
   const fetchAssets = async () => {
     try {
@@ -521,8 +505,8 @@ export default function ManageExpense() {
       const activePartners = [];
       for (const u of partnerUsers) {
         const record = await getPartnerByUserId(u.id);
-        if (record) {
-          activePartners.push(u);
+        if (record && record.id) {
+          activePartners.push({ ...u, partnerId: record.id });
         }
       }
       setPartners(activePartners);
@@ -568,7 +552,8 @@ export default function ManageExpense() {
 
   const handleApprove = async (id: number) => {
     try {
-      await approveExpense(id);
+      const approverInfo = user?.username || user?.id || "Unknown";
+      await approveExpense(id, approverInfo);
       showSuccess("Expense approved successfully.");
       fetchExpenses(); // Refresh list to get updated status
     } catch (err: any) {
@@ -638,18 +623,13 @@ export default function ManageExpense() {
                     onDelete={(id) => handleDelete(id as number)}
                     onEdit={(row) => setEditExpense(row)}
                   />
-                  {/* Implementing a custom bulk/approve action or putting it in columns 
-                      Wait, DataTable only has edit, delete, detail. 
-                      Let's add an Approve button to the details modal natively? 
-                      No, the easiest is to add a custom column for Approve if it's pending.
-                  */}
                 </div>
               )}
             </>
           )}
 
           {activeTab === "add" && (
-            <div className="max-w-4xl">
+            <div className="w-full">
               <AddExpenseForm
                 onAdded={() => setActiveTab("view")}
                 assets={assets} refreshAssets={fetchAssets}
