@@ -10,7 +10,8 @@ import { getAllPartners } from "../../features/users/partnerApi";
 import { Partner } from "../../types/apiTypes";
 import { showSuccess, showError } from "../../utils/toast";
 import { useState, useEffect } from "react";
-
+import Button from "../../components/ui/button/Button";
+import {createProfile, CreateProfileDto, getAllProfiles } from "../../api/ProfileApi";
 // ─── Form types ───────────────────────────────────────────────────────────────
 
 type FormValues = {
@@ -66,15 +67,121 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const [submitting, setSubmitting] = useState(false);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [partnerList, setPartnerList] = useState<Partner[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]); // Users without profiles
+  const [profilesLoaded, setProfilesLoaded] = useState(false); // Track if profiles are loaded
+
+const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+const [profileIsPaid, setProfileIsPaid] = useState("");
+const [profileAmount, setProfileAmount] = useState("");
+const [profileUserId, setProfileUserId] = useState("");
+
+const handleProfileRegister = async () => {
+  if (!profileUserId || profileUserId === "0") {
+    showError("Invalid user selected.");
+    return;
+  }
+
+  if (!profileIsPaid) {
+    showError("Please select Is Paid.");
+    return;
+  }
+
+  if (!profilesLoaded) {
+    showError("⏳ Still loading user data. Please wait a moment and try again.");
+    return;
+  }
+
+  try {
+    const userId = Number(profileUserId);
+    const isPaid = profileIsPaid === "true";
+    const amount = profileAmount ? Number(profileAmount) : null;
+
+    // Validation
+    if (isNaN(userId) || userId <= 0) {
+      showError("Invalid user ID.");
+      return;
+    }
+
+    if (amount !== null && (isNaN(amount) || amount < 0)) {
+      showError("Amount must be a positive number.");
+      return;
+    }
+
+    const payload: CreateProfileDto = {
+      userId,
+      isPaid,
+      amount,
+    };
+
+    console.log("📤 Profile Payload:", JSON.stringify(payload, null, 2)); // 🔍 DEBUG
+
+    const res = await createProfile(payload);
+
+    console.log("✅ Profile Created:", res); // 🔍 SUCCESS
+
+    showSuccess("Profile registered successfully!");
+
+    // Update the form with the new profile ID
+    if (res?.id) {
+      setValue('profileId', res.id);
+    }
+
+    setProfileDialogOpen(false);
+    setProfileIsPaid("");
+    setProfileAmount("");
+    setProfileUserId("");
+
+  } catch (err: any) {
+    console.error("❌ Profile Error:", err); // 🔥 ERROR
+    console.error("Error Response:", err?.response?.data); // 🔥 ERROR DETAILS
+    console.error("Error Status:", err?.response?.status); // Status code
+    console.error("Error Headers:", err?.response?.headers); // Headers
+    console.error("Full Error Object:", JSON.stringify(err, null, 2)); // Full error
+    
+    let errorMsg = "Failed to create profile.";
+    
+    // Handle different error scenarios
+    if (err?.response?.status === 500) {
+      // Try to extract error message from different response formats
+      const responseData = err?.response?.data;
+      const errorText = typeof responseData === 'string' ? responseData : responseData?.message;
+      
+      if (errorText) {
+        errorMsg = "Backend error: " + errorText;
+      } else {
+        errorMsg = "Backend error: Check server logs (500 Internal Server Error)";
+      }
+    } else if (err?.response?.status === 400) {
+      errorMsg = err?.response?.data?.message || "Invalid profile data";
+    } else if (err?.response?.status === 409) {
+      errorMsg = "This user (ID: " + profileUserId + ") already has a profile. Each user can only have one profile.";
+    } else {
+      errorMsg = err?.response?.data?.message || err?.message || "Failed to create profile.";
+    }
+    
+    showError(errorMsg);
+  }
+};
 
   useEffect(() => {
-    // Fetch users (for profile/interviewing dropdowns) and partners (for partner dropdown) in parallel
-    Promise.all([getAllUsers(1, 1000), getAllPartners()])
-      .then(([usersRes, partners]) => {
+    // Fetch users, partners, and profiles in parallel
+    Promise.all([getAllUsers(1, 1000), getAllPartners(), getAllProfiles()])
+      .then(([usersRes, partners, profiles]) => {
         setAllUsers(usersRes.data);
         setPartnerList(partners);
+        
+        // Filter users who don't have profiles yet
+        const userIdsWithProfiles = new Set(profiles.map(p => p.userId));
+        const usersWithoutProfiles = usersRes.data.filter(u => !userIdsWithProfiles.has(u.id));
+        setAvailableUsers(usersWithoutProfiles);
+        setProfilesLoaded(true); // Mark as loaded
+        
+        console.log(`📊 Total Users: ${usersRes.data.length}, Users with Profiles: ${userIdsWithProfiles.size}, Available: ${usersWithoutProfiles.length}`);
       })
-      .catch(() => console.error("Failed to load dropdown data"));
+      .catch((err) => {
+        console.error("Failed to load dropdown data", err);
+        setProfilesLoaded(true); // Mark as loaded even on error to allow user to continue
+      });
   }, []);
 
   // Build partner options: show user's full name, send partner.id
@@ -87,6 +194,13 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
     }),
   ];
 
+  // Users without profiles - for creating new profiles
+  const availableUserOptions = [
+    { value: "", label: availableUsers.length > 0 ? "Select user" : "No users available" },
+    ...availableUsers.map((u) => ({ value: String(u.id), label: `${u.firstName} ${u.lastName}` })),
+  ];
+
+  // All users - for other selections (interviewing user, etc)
   const userOptions = [
     { value: "", label: "Select user (optional)" },
     ...allUsers.map((u) => ({ value: String(u.id), label: `${u.firstName} ${u.lastName}` })),
@@ -98,6 +212,7 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
     handleSubmit,
     trigger,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     shouldUnregister: false,
@@ -118,13 +233,24 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
-      await registerProject({
+      
+      // Format dates to include seconds
+      const formatDateTime = (dateStr: string) => {
+        if (!dateStr) return dateStr;
+        // Convert "2026-03-11T10:28" to "2026-03-11T10:28:00"
+        if (dateStr.includes("T") && dateStr.split("T")[1]?.split(":").length === 2) {
+          return dateStr + ":00";
+        }
+        return dateStr;
+      };
+      
+      const payload = {
         name: data.name,
         description: data.description,
         clientName: data.clientName,
         projectValue: Number(data.projectValue),
-        startDate: data.startDate,
-        endDate: data.endDate,
+        startDate: formatDateTime(data.startDate),
+        endDate: formatDateTime(data.endDate),
         status: data.status,
         managedByPartnerId: Number(data.managedByPartnerId),
         profileId: data.profileId ? Number(data.profileId) : null,
@@ -140,11 +266,19 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
         mobileNumberUsed: data.mobileNumberUsed,
         interviewingUserId: data.interviewingUserId ? Number(data.interviewingUserId) : null,
         isToolUsed: data.isToolUsed,
-      });
+      };
+      
+      console.log("📤 Project Payload:", JSON.stringify(payload, null, 2)); // Debug
+      
+      await registerProject(payload);
       showSuccess("Project registered successfully!");
       reset();
       onAdded?.();
     } catch (err: any) {
+      console.error("❌ Project Error:", err); // Debug
+      console.error("Status:", err?.response?.status); // Debug
+      console.error("Error Message:", err?.response?.data?.message); // Debug
+      console.error("Full Response:", err?.response?.data); // Debug
       showError(err?.response?.data?.message || "Failed to create project.");
     } finally {
       setSubmitting(false);
@@ -450,8 +584,8 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
           <FieldError msg={errors.managedByPartnerId?.message} />
         </div>
 
-        <div>
-          <Label>Profile User (Optional)</Label>
+        {/* <div>
+          <Label>Project Profile</Label>
           <Controller
             name="profileId"
             control={control}
@@ -463,7 +597,162 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
               />
             )}
           />
+        </div> */}
+
+  <div className="md:col-span-2">
+    <Label>Project Profile</Label>
+    {availableUsers.length === 0 && (
+      <p className="text-xs text-orange-600 dark:text-orange-400 mb-2">⚠️ All users already have profiles assigned.</p>
+    )}
+
+    <div className="mt-2 flex items-center gap-3">
+
+      {/* User Dropdown - Only show users without profiles */}
+      <div className="flex-1">
+        <Controller
+          name="profileId"
+          control={control}
+          render={({ field }) => (
+            <Select
+              options={availableUserOptions}
+              value={field.value ? String(field.value) : ""}
+              onChange={(val) => {
+                const userId = val ? Number(val) : null;
+                field.onChange(userId);
+                setProfileUserId(val); // sync with modal
+              }}
+            />
+          )}
+        />
+      </div>
+
+      {/* Add New Button */}
+      <Button
+        type="button"
+        variant="outline"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!profileUserId) {
+            showError("Please select a user first");
+            return;
+          }
+          if (availableUsers.length === 0) {
+            showError("All users already have profiles. No users available for new profiles.");
+            return;
+          }
+          setProfileDialogOpen(true);
+        }}
+      >
+        + Add New
+      </Button>
+    </div>
+
+  {/* Modal */}
+  {profileDialogOpen && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setProfileDialogOpen(false);
+        }}
+      />
+
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
+          <h2 className="text-gray-900 dark:text-white text-base font-semibold">
+            Add Project Profile
+          </h2>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setProfileDialogOpen(false);
+            }}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          >
+            ✕
+          </button>
         </div>
+
+        {/* Body */}
+        <div className="px-5 py-5 space-y-4">
+
+          {/* ❌ REMOVED Select User */}
+
+          {/* Is Paid */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Is Paid <span className="text-red-500">*</span>
+            </label>
+            <Select
+              options={[
+                { value: "", label: "Select..." },
+                { value: "true", label: "Yes" },
+                { value: "false", label: "No" },
+              ]}
+              value={profileIsPaid}
+              onChange={(val) => setProfileIsPaid(val)}
+            />
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Amount (₹)
+            </label>
+            <Input
+              type="number"
+              value={profileAmount}
+              onChange={(e) => setProfileAmount(e.target.value)}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleProfileRegister();
+              }}
+              className="flex-1"
+            >
+              Register
+            </Button>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setProfileDialogOpen(false);
+                setProfileIsPaid("");
+                setProfileAmount("");
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )}
+</div>
+
 
         <div>
           <Label>Interviewing User (Optional)</Label>

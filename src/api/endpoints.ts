@@ -5,7 +5,14 @@ export const API_ENDPOINTS = {
     LOGIN: `${API_PREFIX}/Auth/login`,
     REGISTER: `${API_PREFIX}/Auth/register`,
   },
-
+  
+  PROFILE: {
+  GET_ALL: `${API_PREFIX}/Profile`,
+  GET_BY_ID: (id: number) => `${API_PREFIX}/Profile/${id}`,
+  CREATE: `${API_PREFIX}/Profile`,
+  UPDATE: (id: number) => `${API_PREFIX}/Profile/${id}`,
+  DELETE: (id: number) => `${API_PREFIX}/Profile/${id}`,
+},
   USERS: {
     BASE: `${API_PREFIX}/user`,
     GET_ALL: `${API_PREFIX}/user`,
