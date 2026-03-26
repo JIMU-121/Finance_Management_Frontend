@@ -9,10 +9,11 @@ interface ModalShellProps {
   children: ReactNode;
   /** Footer action buttons. If omitted, a default Cancel is rendered. */
   footer?: ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl";
+  maxWidth?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
   saving?: boolean;
   onSave?: () => void;
   saveLabel?: string;
+  hideFooter?: boolean;
 }
 
 const MAX_WIDTH: Record<string, string> = {
@@ -21,6 +22,7 @@ const MAX_WIDTH: Record<string, string> = {
   lg: "max-w-lg",
   xl: "max-w-xl",
   "2xl": "max-w-2xl",
+  "3xl": "max-w-3xl",
 };
 
 export function ModalShell({
@@ -33,6 +35,7 @@ export function ModalShell({
   saving,
   onSave,
   saveLabel = "Save Changes",
+  hideFooter = false,
 }: ModalShellProps) {
   return (
     <div className="fixed inset-0 z-[100000] flex items-center justify-center">
@@ -82,24 +85,27 @@ export function ModalShell({
         <div className="flex-1 overflow-y-auto p-6">{children}</div>
 
         {/* Footer */}
-        <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
-          {footer ?? (
-            <>
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-              {onSave && (
-                <Button
-                  onClick={onSave}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                  disabled={saving}
-                >
-                  {saving ? "Saving..." : saveLabel}
+        {!hideFooter && (
+          <div className="flex flex-shrink-0 justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
+            {footer ?? (
+              <>
+                <Button variant="outline" onClick={onClose} type="button">
+                  Cancel
                 </Button>
-              )}
-            </>
-          )}
-        </div>
+                {onSave && (
+                  <Button
+                    onClick={onSave}
+                    type="button"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={saving}
+                  >
+                    {saving ? "Saving..." : saveLabel}
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

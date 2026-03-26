@@ -53,7 +53,8 @@ To get started with TailAdmin, ensure you have the following prerequisites insta
 Clone the repository using the following command:
 
 ```bash
-git clone https://github.com/TailAdmin/free-react-tailwind-admin-dashboard.git
+git clone https://github.com/JIMU-121/Finance_Management_Frontend.git
+
 ```
 
 > Windows Users: place the repository near the root of your drive if you face issues while cloning.

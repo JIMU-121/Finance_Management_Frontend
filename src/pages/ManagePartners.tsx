@@ -19,7 +19,7 @@ import { Partner } from "../types/apiTypes";
 
 // ─── Types and Constants ──────────────────────────────────────────────────────
 
-type PartnerUser = User & { 
+type PartnerUser = User & {
   id: number;
   partnerRecord?: Partner;
   _isPartnerCreated?: boolean;
@@ -44,7 +44,7 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
             {row.firstName} {row.lastName}
           </span>
           {row.isMainPartner && (
-             <span className="text-[10px] uppercase font-bold text-brand-500">Main Partner</span>
+            <span className="text-[10px] uppercase font-bold text-brand-500">Main Partner</span>
           )}
         </div>
       </div>
@@ -86,11 +86,10 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Status",
     render: (row) => (
       <span
-        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-          row._isPartnerCreated
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-        }`}
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${row._isPartnerCreated
+          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+          }`}
       >
         {row._isPartnerCreated ? "Created" : "Not Created"}
       </span>
@@ -126,13 +125,13 @@ function EditPartnerModal({
   const [email, setEmail] = useState(partner.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Partner fields
   const [partnershipType, setPartnershipType] = useState(partner.partnerRecord?.partnershipType || partner.partnershipType || "");
   const [sharePercentage, setSharePercentage] = useState<number | string>((partner.partnerRecord?.sharePercentage ?? partner.sharePercentage) || "");
   const [branchId, setBranchId] = useState<number | string>((partner.partnerRecord?.branchId ?? partner.branchId) || "");
   const [isMainPartner, setIsMainPartner] = useState((partner.partnerRecord?.isMainPartner ?? partner.isMainPartner) || false);
-  
+
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -142,13 +141,13 @@ function EditPartnerModal({
     }
     try {
       setSaving(true);
-      
+
       // We only update the Partner details as requested
       const partnerData: Partner = {
         userId: partner.id,
         partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: branchId ? Number(branchId) : undefined,
+        branchId: branchId ? Number(branchId) : 1,
         isMainPartner
       };
 
@@ -223,10 +222,10 @@ function EditPartnerModal({
               </button>
             </div>
           </div>
-          
+
           <hr className="border-gray-100 dark:border-gray-800" />
           <h4 className="font-semibold text-gray-800 dark:text-white/90">Partnership Details</h4>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Partnership Type</Label>
@@ -236,7 +235,7 @@ function EditPartnerModal({
               <Label>Share Percentage (%)</Label>
               <Input type="number" step="0.01" min="0" max="100" value={sharePercentage} onChange={(e: any) => setSharePercentage(e.target.value)} placeholder="0.00" />
             </div>
-             <div>
+            <div>
               <Label>Branch ID</Label>
               <Input type="number" value={branchId} onChange={(e: any) => setBranchId(e.target.value)} placeholder="1" />
             </div>
@@ -291,15 +290,15 @@ export default function ManagePartners() {
       // Without this, partners on page 2 (if page size is 10) won't show up.
       // Alternatively, the backend should expose an endpoint like `/api/user?role=Partner`
       const res = await getAllUsers(1, 1000);
-      
+
       const parsedData = res.data as PartnerUser[];
-      
+
       // Filter the data to ONLY include users who have the partner role (2 or "Partner")
       // Ensure we trim any whitespace to be safe
       const partnerUsers = parsedData.filter(
-         u => String(u.role).trim() === String(PARTNER_ROLE_ID) || String(u.role).trim().toLowerCase() === "partner"
+        u => String(u.role).trim() === String(PARTNER_ROLE_ID) || String(u.role).trim().toLowerCase() === "partner"
       );
-      
+
       // Fetch partner details for each user
       const enrichedPartners = await Promise.all(
         partnerUsers.map(async (u) => {
@@ -311,13 +310,13 @@ export default function ManagePartners() {
           };
         })
       );
-      
+
       const registered = enrichedPartners.filter(p => p._isPartnerCreated);
       const inactive = enrichedPartners.filter(p => !p._isPartnerCreated);
-      
+
       setRegisteredPartners(registered);
       setInactivePartners(inactive);
-      
+
       // If server pagination is needed, we technically have to update how pagination works here 
       // when splitting into two tabs, but we'll reflect the count of the active tab.
       setTotalItems(activeTab === "registered" ? registered.length : inactive.length);
@@ -332,9 +331,9 @@ export default function ManagePartners() {
   useEffect(() => {
     // Reset page to 1 when tab changes to ensure we see the first page of results
     if (pageNumber !== 1) {
-       paginationProps.onPageChange(1);
+      paginationProps.onPageChange(1);
     } else {
-       fetchPartners();
+      fetchPartners();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -349,11 +348,11 @@ export default function ManagePartners() {
     try {
       await deleteUser(id);
       showSuccess("Partner deleted successfully.");
-      
+
       if (activeTab === "registered") {
-         setRegisteredPartners((prev) => prev.filter((u) => u.id !== id));
+        setRegisteredPartners((prev) => prev.filter((u) => u.id !== id));
       } else {
-         setInactivePartners((prev) => prev.filter((u) => u.id !== id));
+        setInactivePartners((prev) => prev.filter((u) => u.id !== id));
       }
       setTotalItems((prev) => prev - 1);
     } catch (err: any) {
@@ -368,7 +367,7 @@ export default function ManagePartners() {
       label: "Registered Partners",
       icon: (
         <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
         </svg>
       ),
     },
