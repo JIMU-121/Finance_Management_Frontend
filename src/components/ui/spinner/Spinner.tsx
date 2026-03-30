@@ -2,13 +2,9 @@ type SpinnerSize = "sm" | "md" | "lg";
 type SpinnerColor = "blue" | "white" | "gray";
 
 interface SpinnerProps {
-    /** Size of the spinner — sm (16px), md (32px), lg (48px). Defaults to "md". */
     size?: SpinnerSize;
-    /** Color of the spinning arc. Defaults to "blue". */
     color?: SpinnerColor;
-    /** Optional label rendered below the spinner. */
     label?: string;
-    /** Extra wrapper class names */
     className?: string;
 }
 

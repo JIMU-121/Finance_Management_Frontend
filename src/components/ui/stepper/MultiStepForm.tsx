@@ -1,4 +1,4 @@
-import { useState, FormEvent, ReactNode } from "react";
+import { useState, FormEvent, ReactNode, useRef, useEffect } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -47,15 +47,15 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
     return (
         <div className="mb-10 relative px-1">
             {/* Track */}
-            <div className="absolute left-5 right-5 top-5 h-[2px] bg-gray-100 dark:bg-gray-800 z-0 hidden sm:block" />
+            <div className="absolute left-5 right-5 top-5 h-[2px] bg-gray-100 dark:bg-gray-800 z-0 block" />
             {/* Fill */}
             <div
-                className="absolute left-5 top-5 h-[2px] bg-blue-600 z-0 hidden sm:block transition-all duration-500 ease-out"
+                className="absolute left-5 top-5 h-[2px] bg-blue-600 z-0 block transition-all duration-500 ease-out"
                 style={{ width: `calc(${progressPercent}% - ${progressPercent > 0 ? 2.5 : 0}rem)` }}
             />
 
             {/* Circles + Labels */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-start relative z-10 gap-4 sm:gap-0">
+            <div className="flex flex-row justify-between items-start relative z-10 w-full">
                 {steps.map((label, i) => {
                     const stepNumber = i + 1;
                     const isCompleted = currentStep > stepNumber;
@@ -63,7 +63,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     const isCurrent = currentStep === stepNumber;
 
                     return (
-                        <div key={i} className="flex items-center sm:flex-col gap-3 sm:gap-2 sm:items-center">
+                        <div key={i} className="flex flex-col gap-2 items-center flex-1">
                             {/* Circle */}
                             <div
                                 className={`
@@ -89,7 +89,7 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
 
                             {/* Label */}
                             <span
-                                className={`text-xs font-medium sm:text-center sm:max-w-[80px] transition-colors duration-300
+                                className={`text-[10px] sm:text-xs font-medium text-center px-1 transition-colors duration-300
                   ${isActive
                                         ? "text-gray-800 dark:text-gray-100"
                                         : "text-gray-400 dark:text-gray-500"
@@ -149,6 +149,18 @@ export function MultiStepForm({
 }: MultiStepFormProps) {
     const [currentStep, setCurrentStep] = useState(1);
     const [isAdvancing, setIsAdvancing] = useState(false);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    useEffect(() => {
+        // Scroll to the top when navigating steps
+        const mainContainer = document.getElementById("main-scroll-container");
+        if (mainContainer) {
+            mainContainer.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (formRef.current) {
+            formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    }, [currentStep]);
+
     const totalSteps = steps.length;
     const isLastStep = currentStep === totalSteps;
 
@@ -173,9 +185,22 @@ export function MultiStepForm({
         setCurrentStep((prev) => Math.max(prev - 1, 1));
     };
 
-    // ── Submit handler — validates last step THEN delegates to onSubmit ──────
-    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    // ── Implicit Submit from Enter Key ──────
+    const handleImplicitSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!isLastStep) {
+            handleNext();
+            return;
+        }
+
+        // It is the last step
+        await executeFinalSubmit(e);
+    };
+
+    // ── Explicit Final Submit ──────
+    const executeFinalSubmit = async (e?: FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+        if (e && e.preventDefault) e.preventDefault();
         if (isAdvancing) return;
         setIsAdvancing(true);
         try {
@@ -183,7 +208,12 @@ export function MultiStepForm({
                 const valid = await onValidate(currentStep - 1); // validate last step
                 if (!valid) return;
             }
-            onSubmit(e); // delegate to caller (e.g. RHF handleSubmit)
+            // Manually construct a fake event if it's a mouse click so RHF doesn't complain
+            const pseudoEvent = e && 'nativeEvent' in e && e.nativeEvent instanceof Event
+                ? (e as unknown as React.BaseSyntheticEvent)
+                : undefined;
+
+            onSubmit(pseudoEvent || ({} as React.BaseSyntheticEvent)); // delegate to caller (e.g. RHF handleSubmit)
         } finally {
             setIsAdvancing(false);
         }
@@ -193,7 +223,8 @@ export function MultiStepForm({
 
     return (
         <form
-            onSubmit={handleSubmit}
+            ref={formRef}
+            onSubmit={handleImplicitSubmit}
             noValidate
             className={`
         rounded-2xl border border-gray-200 bg-white
@@ -261,7 +292,8 @@ export function MultiStepForm({
 
                     {isLastStep ? (
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={executeFinalSubmit}
                             disabled={isAdvancing}
                             className="
                 inline-flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-medium
