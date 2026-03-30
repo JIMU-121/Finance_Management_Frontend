@@ -527,7 +527,7 @@ export default function ManageExpense() {
       const data = res.data || res;
       setExpenses(data as unknown as (Expense & { id: number })[]);
     } catch (err) {
-      console.error("Failed to fetch expenses", err);
+      //console.error("Failed to fetch expenses", err);
       showError("Failed to load expenses.");
     } finally {
       setLoading(false);
