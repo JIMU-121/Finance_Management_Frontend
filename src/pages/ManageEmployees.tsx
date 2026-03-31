@@ -68,7 +68,10 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
   },
   {
     header: "CTC",
-    render: (row) => row.employeeRecord?.currentCTC ?? "—",
+    render: (row) => {
+    const val = Number(row.employeeRecord?.currentCTC || 0);
+    return val ? val.toLocaleString("en-IN") : "—";
+  },
     className: "whitespace-nowrap font-medium text-gray-800 dark:text-white",
   },
   {
@@ -132,9 +135,19 @@ const detailFields: DetailField<EmployeeUser>[] = [
   { label: "Branch ID", render: (r) => r.employeeRecord?.branchId ?? "—" },
   { label: "Department", render: (r) => r.employeeRecord?.department ?? "—" },
   { label: "Position", render: (r) => r.employeeRecord?.position ?? "—" },
-  { label: "Monthly Salary", render: (r) => r.employeeRecord?.monthlySalary ?? "—" },
-  { label: "Previous CTC", render: (r) => r.employeeRecord?.previousCTC ?? "—" },
-  { label: "Current CTC", render: (r) => r.employeeRecord?.currentCTC ?? "—" },
+{ label: "Monthly Salary", render: (r) => {
+  const val = Number(r.employeeRecord?.monthlySalary || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+}},
+
+{ label: "Previous CTC", render: (r) => {
+  const val = Number(r.employeeRecord?.previousCTC || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+} },
+{ label: "Current CTC", render: (r) => {
+  const val = Number(r.employeeRecord?.currentCTC || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+} },
   { label: "Leaves Taken", render: (r) => r.employeeRecord?.takenLeave ?? "—" },
   { label: "Status", render: (r) => r._isEmployeeCreated ? "Created" : "Not Created" },
   {
@@ -179,6 +192,13 @@ function EditEmployeeModal({
 
   const [saving, setSaving] = useState(false);
 
+  const formatAmountInput = (value: any, setter: any) => {
+  value = value.replace(/,/g, "");
+  if (!/^\d*$/.test(value)) return;
+  const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+  setter(formatted);
+};
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -186,14 +206,14 @@ function EditEmployeeModal({
         userId: employee.id,
         department,
         position,
-        monthlySalary: Number(monthlySalary) || 0,
-        currentCTC: Number(currentCTC) || 0,
+         monthlySalary: Number(String(monthlySalary).replace(/,/g, "")) || 0,
+        currentCTC: Number(String(currentCTC).replace(/,/g, "")) || 0,
         joinDate,
         relievingDate: relievingDate || undefined,
         takenLeave: Number(takenLeave) || 0,
         employeeCode,
         branchId: Number(branchId) || 0,
-        previousCTC: Number(previousCTC) || 0,
+        previousCTC: Number(String(previousCTC).replace(/,/g, "")) || 0,
       };
 
       if (employee._isEmployeeCreated && employee.employeeRecord?.id) {
@@ -273,15 +293,14 @@ function EditEmployeeModal({
           </div>
           <div>
             <Label>Monthly Salary</Label>
-            <Input type="number" value={monthlySalary} onChange={(e: any) => setMonthlySalary(e.target.value)} placeholder="55000" />
-          </div>
+          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
           <div>
             <Label>Previous CTC</Label>
-            <Input type="number" value={previousCTC} onChange={(e: any) => setPreviousCTC(e.target.value)} placeholder="500000" />
+            <Input type="text" value={previousCTC} onChange={(e: any) => formatAmountInput(e.target.value, setPreviousCTC)} />
           </div>
           <div>
             <Label>Current CTC</Label>
-            <Input type="number" value={currentCTC} onChange={(e: any) => setCurrentCTC(e.target.value)} placeholder="660000" />
+            <Input type="text" value={currentCTC} onChange={(e: any) => formatAmountInput(e.target.value, setCurrentCTC)}/>
           </div>
           <div>
             <Label>Joining Date</Label>
