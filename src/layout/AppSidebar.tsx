@@ -9,7 +9,7 @@ import {
   UserCircleIcon,
   Handshake,
   EmployeeeIcon,
-  FileText
+  FileText,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
 import SidebarWidget from "./SidebarWidget";
@@ -26,10 +26,7 @@ const navItems: NavItem[] = [
   {
     icon: <GridIcon />,
     name: "Dashboard",
-    subItems: [
-      { name: "Ecommerce", path: "/", pro: false },
-      { name: "Employee", path: "/employee-dashboard", pro: false },
-    ],
+    path: "/",
   },
   {
     icon: <Handshake />,
@@ -42,59 +39,30 @@ const navItems: NavItem[] = [
     path: "/manage-employees",
   },
   {
-    icon: <UserCircleIcon />,
-    name: "Manage Users",
-    path: "/manage-user",
-  },
-  {
-    icon: <FileText/>,
-    name:"Manage Document Type",
-    path: "/document-type"
-  },
-  {
-    icon: <FileText />,
-    name: "Manage Asset",
-    path: "/manage-asset"
-  },
-  {
-    icon: <FileText />,
-    name: "Manage Expense",
-    path: "/manage-expense"
-  },
-  {
-    icon: <UserCircleIcon />,
-    name: "My Profile",
-    path: "/profile",
-  },
-  {
     icon: <Projector />,
     name: "Manage Project",
     path: "/manage-project",
   },
   {
     icon: <FileText />,
+    name: "Manage Expense",
+    path: "/manage-expense",
+  },
+  {
+    icon: <FileText />,
     name: "Manage Revenue",
     path: "/manage-revenue",
   },
-
-  // {
-  //   name: "Forms",
-  //   icon: <ListIcon />,
-  //   subItems: [{ name: "Form Elements", path: "/form-elements", pro: false }],
-  // },
-  // {
-  //   name: "Tables",
-  //   icon: <TableIcon />,
-  //   subItems: [{ name: "Basic Tables", path: "/basic-tables", pro: false }],
-  // },
-  // {
-  //   name: "Pages",
-  //   icon: <PageIcon />,
-  //   subItems: [
-  //     { name: "Blank Page", path: "/blank", pro: false },
-  //     { name: "404 Error", path: "/error-404", pro: false },
-  //   ],
-  // },
+  {
+    icon: <FileText />,
+    name: "Manage Asset",
+    path: "/manage-asset",
+  },
+  {
+    icon: <FileText />,
+    name: "Manage Document Type",
+    path: "/document-type",
+  },
 ];
 
 const othersItems: NavItem[] = [
@@ -137,14 +105,14 @@ const AppSidebar: React.FC = () => {
     index: number;
   } | null>(null);
   const [subMenuHeight, setSubMenuHeight] = useState<Record<string, number>>(
-    {}
+    {},
   );
   const subMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // const isActive = (path: string) => location.pathname === path;
   const isActive = useCallback(
     (path: string) => location.pathname === path,
-    [location.pathname]
+    [location.pathname],
   );
 
   useEffect(() => {
@@ -326,8 +294,8 @@ const AppSidebar: React.FC = () => {
           isExpanded || isMobileOpen
             ? "w-[290px]"
             : isHovered
-            ? "w-[290px]"
-            : "w-[90px]"
+              ? "w-[290px]"
+              : "w-[90px]"
         }
         ${isMobileOpen ? "translate-x-0" : "-translate-x-full"}
         lg:translate-x-0`}
@@ -386,7 +354,7 @@ const AppSidebar: React.FC = () => {
               </h2>
               {renderMenuItems(navItems, "main")}
             </div>
-            <div className="">
+            {/* <div className="">
               <h2
                 className={`mb-4 text-xs uppercase flex leading-[20px] text-gray-400 ${
                   !isExpanded && !isHovered
@@ -395,16 +363,16 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "Additional"
+                  "Additionamn mnk  l"
                 ) : (
                   <HorizontaLDots />
                 )}
               </h2>
               {renderMenuItems(othersItems, "others")}
-            </div>
+            </div> */}
           </div>
         </nav>
-        {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null}
+        {/* {isExpanded || isHovered || isMobileOpen ? <SidebarWidget /> : null} */}
       </div>
     </aside>
   );
