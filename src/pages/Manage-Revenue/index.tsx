@@ -47,7 +47,7 @@ const getRevenueDetailFields = (
       return project ? project.name : `ID: ${r.projectId}`;
     },
   },
-  { label: "Amount", render: (r) => `₹${r.amount.toLocaleString()}` },
+  { label: "Amount", render: (r) => `₹${r.amount.toLocaleString("en-IN")}` },
   { label: "Date", render: (r) => new Date(r.date).toLocaleString() },
   {
     label: "Revenue From",

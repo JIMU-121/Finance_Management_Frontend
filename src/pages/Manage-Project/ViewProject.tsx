@@ -93,7 +93,14 @@ function EditProjectModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const [formData, setFormData] = useState<Project>({ ...project });
+
+  const [formData, setFormData] = useState<any>({
+    ...project,
+    projectValue: project.projectValue
+      ? Number(project.projectValue).toLocaleString("en-IN")
+      : "",
+  });
+
   const [saving, setSaving] = useState(false);
   const [profiles, setProfiles] = useState<any[]>([]);
 
@@ -103,17 +110,40 @@ function EditProjectModal({
       .catch(() => console.error("Failed to load profiles"));
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value, type } = e.target;
-    setFormData((prev) => ({
+
+    setFormData((prev: any) => ({
       ...prev,
       [name]: type === "number" ? Number(value) : value,
     }));
   };
 
   const handleToggle = (name: keyof Project) => {
-    setFormData((prev) => ({ ...prev, [name]: !prev[name] }));
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: !prev[name],
+    }));
   };
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+
+    value = value.replace(/,/g, "");
+
+    if (!/^\d*$/.test(value)) return;
+
+    const formatted = value
+      ? Number(value).toLocaleString("en-IN")
+      : "";
+
+    setFormData((prev: any) => ({
+      ...prev,
+      projectValue: formatted,
+    }));
+  };
+
 
   const handleSave = async () => {
     try {
@@ -122,7 +152,7 @@ function EditProjectModal({
         name: formData.name,
         description: formData.description,
         clientName: formData.clientName,
-        projectValue: Number(formData.projectValue),
+        projectValue: Number(String(formData.projectValue).replace(/,/g, "")),
         startDate: formData.startDate,
         endDate: formData.endDate,
         status: formData.status,
@@ -214,8 +244,13 @@ function EditProjectModal({
           </div>
           <div>
             <Label>Project Value (₹)</Label>
-            <Input name="projectValue" type="number" value={formData.projectValue} onChange={handleChange} placeholder="Value" />
-          </div>
+            <Input
+              type="text"
+              value={formData.projectValue || ""}
+              onChange={handleAmountChange}
+              placeholder="e.g. 2,00,000"
+            />         
+             </div>
           <div>
             <Label>Start Date</Label>
             <Input name="startDate" type="datetime-local" value={formData.startDate?.slice(0, 16)} onChange={handleChange} />
@@ -299,9 +334,9 @@ const detailFields: DetailField<Project>[] = [
   { label: "Client Manager Name", render: (r) => r.clientManagerName },
   { label: "Client Manager Email", render: (r) => r.clientManagerEmail },
   { label: "Client Manager Contact", render: (r) => r.clientManagerContact },
-  { label: "Project Value", render: (r) => `₹${(r.projectValue ?? 0).toLocaleString()}` },
-  { label: "Start Date", render: (r) => (r.startDate ? new Date(r.startDate).toLocaleString() : "—") },
-  { label: "End Date", render: (r) => (r.endDate ? new Date(r.endDate).toLocaleString() : "—") },
+  { label: "Project Value", render: (r) => `₹${(r.projectValue ?? 0).toLocaleString("en-IN")}` },
+  { label: "Start Date", render: (r) => (r.startDate ? new Date(r.startDate).toLocaleString("en-IN") : "—") },
+  { label: "End Date", render: (r) => (r.endDate ? new Date(r.endDate).toLocaleString("en-IN") : "—") },
   { label: "Is Setup Smooth", render: (r) => (r.isSmooth ? "Yes" : "No") },
   { label: "Is Tool Used", render: (r) => (r.isToolUsed ? "Yes" : "No") },
   { label: "Leave Apply Way", render: (r) => r.leaveApplyWay },
@@ -365,70 +400,81 @@ export default function ViewProjectTable() {
     }
   };
 
-  // Build columns here so we can close over setAssignProject
-  const columns: ColumnDef<Project>[] = [
-    {
-      header: "Project Name",
-      render: (row) => (
-        <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-          {row.name}
-        </span>
-      ),
-    },
-    {
-      header: "Manager",
-      render: (row) => <span className="whitespace-nowrap">{row.managerName}</span>,
-    },
-    {
-      header: "Client",
-      render: (row) => <span className="whitespace-nowrap">{row.clientName}</span>,
-    },
-    {
-      header: "Value",
-      render: (row) => (
+ const columns: ColumnDef<Project>[] = [
+  {
+    header: "Project Name",
+    render: (row) => (
+      <span className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+        {row.name}
+      </span>
+    ),
+  },
+  {
+    header: "Manager",
+    render: (row) => (
+      <span className="whitespace-nowrap">{row.managerName}</span>
+    ),
+  },
+  {
+    header: "Client",
+    render: (row) => (
+      <span className="whitespace-nowrap">{row.clientName}</span>
+    ),
+  },
+
+
+  {
+    header: "Value",
+    render: (row) => {
+      const val = Number(row.projectValue || 0);
+      return (
         <span className="whitespace-nowrap font-medium text-gray-800 dark:text-white">
-          ₹{(row.projectValue ?? 0).toLocaleString()}
+          ₹{val ? val.toLocaleString("en-IN") : "-"}
         </span>
-      ),
+      );
     },
-    {
-      header: "Start Date",
-      render: (row) => (
-        <span className="whitespace-nowrap">
-          {row.startDate ? new Date(row.startDate).toLocaleDateString() : "—"}
-        </span>
-      ),
-    },
-    {
-      header: "End Date",
-      render: (row) => (
-        <span className="whitespace-nowrap">
-          {row.endDate ? new Date(row.endDate).toLocaleDateString() : "—"}
-        </span>
-      ),
-    },
-    {
-      header: "Managing Partner",
-      render: (row) => (
-        <span className="whitespace-nowrap">{row.managedByPartner ?? "—"}</span>
-      ),
-    },
-    {
-      header: "Employees",
-      render: (row) => (
-        <EmployeeAvatars
-          projectId={row.id}
-          initialEmployees={row.employees}
-          employeesMap={employeesMap}
-          onManage={() => setAssignProject(row)}
-        />
-      ),
-    },
-    {
-      header: "Status",
-      render: (row) => <StatusBadge status={row.status} />,
-    },
-  ];
+  },
+
+  {
+    header: "Start Date",
+    render: (row) => (
+      <span className="whitespace-nowrap">
+        {row.startDate ? new Date(row.startDate).toLocaleDateString() : "—"}
+      </span>
+    ),
+  },
+  {
+    header: "End Date",
+    render: (row) => (
+      <span className="whitespace-nowrap">
+        {row.endDate ? new Date(row.endDate).toLocaleDateString() : "—"}
+      </span>
+    ),
+  },
+  {
+    header: "Managing Partner",
+    render: (row) => (
+      <span className="whitespace-nowrap">
+        {row.managedByPartner ?? "—"}
+      </span>
+    ),
+  },
+  {
+    header: "Employees",
+    render: (row) => (
+      <EmployeeAvatars
+        projectId={row.id}
+        initialEmployees={row.employees}
+        employeesMap={employeesMap}
+        onManage={() => setAssignProject(row)}
+      />
+    ),
+  },
+  {
+    header: "Status",
+    render: (row) => <StatusBadge status={row.status} />,
+  },
+];
 
   return (
     <>

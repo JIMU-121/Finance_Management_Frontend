@@ -58,7 +58,7 @@ const assetColumns: ColumnDef<Asset & { id: number }>[] = [
     header: "Amount",
     render: (row) => (
       <span className="text-gray-600 dark:text-gray-300">
-        ₹{row.amount}
+        ₹{row.amount ? row.amount.toLocaleString("en-IN") : "-"}
       </span>
     ),
   },
@@ -79,7 +79,7 @@ const assetDetailFields: DetailField<Asset & { id: number }>[] = [
   { label: "Asset ID", render: (r) => r.id },
   { label: "Name", render: (r) => r.name },
   { label: "Description", render: (r) => r.description },
-  { label: "Amount", render: (r) => `₹${r.amount}` },
+  { label: "Amount", render: (r) => `₹${r.amount ? r.amount.toLocaleString("en-IN") : "-"}` },
   {
     label: "Purchase Date", render: (r) => {
       const datePart = safeFormatDate(r.purchase_Date as unknown as string);
@@ -103,9 +103,19 @@ function EditAssetModal({
 }) {
   const [name, setName] = useState(asset.name);
   const [description, setDescription] = useState(asset.description);
-  const [amount, setAmount] = useState<number | string>(asset.amount ?? "");
+  const [amount, setAmount] = useState<number | string>(
+    asset.amount ? asset.amount.toLocaleString("en-IN") : ""
+  );
   const [purchaseDate, setPurchaseDate] = useState(() => safeFormatDate(asset.purchase_Date as unknown as string));
   const [saving, setSaving] = useState(false);
+
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
 
   const handleSave = async () => {
     if (!name.trim() || !description.trim() || !amount || !purchaseDate) {
@@ -118,7 +128,7 @@ function EditAssetModal({
         id: asset.id,
         name,
         description,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         purchase_Date: purchaseDate,
       });
       showSuccess("Asset updated successfully.");
@@ -163,7 +173,7 @@ function EditAssetModal({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Amount</Label>
-              <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="2000" />
+              <Input type="text" value={amount} onChange={handleAmountChange} placeholder="e.g. 2,00,000" />
             </div>
             <div>
               <DatePicker
@@ -200,6 +210,14 @@ export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void 
   const [purchaseDate, setPurchaseDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
+
   const clearInput = () => {
     setName(""); setDescription(""); setAmount(""); setPurchaseDate("");
   };
@@ -215,7 +233,7 @@ export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void 
       const createdAsset = await createAsset({
         name,
         description,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         purchase_Date: purchaseDate
       });
 
