@@ -10,6 +10,15 @@ export function ScrollToTop() {
       left: 0,
       behavior: "smooth",
     });
+
+    const mainContent = document.getElementById("main-scroll-container");
+    if (mainContent) {
+      mainContent.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
+    }
   }, [pathname]);
 
   return null;

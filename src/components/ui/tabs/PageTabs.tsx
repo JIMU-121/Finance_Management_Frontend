@@ -18,8 +18,8 @@ export function PageTabs<T extends string>({
   onTabChange,
 }: PageTabsProps<T>) {
   return (
-    <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
-      <div className="flex items-center gap-1">
+    <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-2 sm:gap-1 min-w-max">
         {tabs.map((tab) => (
           <button
             key={tab.key}

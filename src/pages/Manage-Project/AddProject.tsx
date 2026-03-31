@@ -4,6 +4,7 @@ import Label from "../../components/form/Label";
 import Select from "../../components/form/Select";
 import Switch from "../../components/form/switch/Switch";
 import { MultiStepForm } from "../../components/ui/stepper/MultiStepForm";
+import { ModalShell } from "../../components/ui/modal/ModalShell";
 import { registerProject } from "../../features/projects/projectAPI";
 import { getAllUsers, User } from "../../features/users/userApi";
 import { getAllPartners } from "../../features/users/partnerApi";
@@ -11,7 +12,7 @@ import { Partner } from "../../types/apiTypes";
 import { showSuccess, showError } from "../../utils/toast";
 import { useState, useEffect } from "react";
 import Button from "../../components/ui/button/Button";
-import {createProfile, CreateProfileDto, getAllProfiles } from "../../api/ProfileApi";
+import { createProfile, CreateProfileDto, getAllProfiles } from "../../api/ProfileApi";
 // ─── Form types ───────────────────────────────────────────────────────────────
 
 type FormValues = {
@@ -45,15 +46,6 @@ type FormValues = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Section header inside a step */
-function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
-  return (
-    <div className="mb-6 pb-4 border-b border-gray-100 dark:border-gray-800">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
-      {subtitle && <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>}
-    </div>
-  );
-}
 
 /** Inline error message under a field */
 function FieldError({ msg }: { msg?: string }) {
@@ -70,98 +62,90 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const [availableUsers, setAvailableUsers] = useState<User[]>([]); // Users without profiles
   const [profilesLoaded, setProfilesLoaded] = useState(false); // Track if profiles are loaded
 
-const [profileDialogOpen, setProfileDialogOpen] = useState(false);
-const [profileIsPaid, setProfileIsPaid] = useState("");
-const [profileAmount, setProfileAmount] = useState("");
-const [profileUserId, setProfileUserId] = useState("");
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [profileIsPaid, setProfileIsPaid] = useState("");
+  const [profileAmount, setProfileAmount] = useState("");
+  const [profileUserId, setProfileUserId] = useState("");
 
-const handleProfileRegister = async () => {
-  if (!profileUserId || profileUserId === "0") {
-    showError("Invalid user selected.");
-    return;
-  }
-
-  if (!profileIsPaid) {
-    showError("Please select Is Paid.");
-    return;
-  }
-
-  if (!profilesLoaded) {
-    showError("⏳ Still loading user data. Please wait a moment and try again.");
-    return;
-  }
-
-  try {
-    const userId = Number(profileUserId);
-    const isPaid = profileIsPaid === "true";
-    const amount = profileAmount ? Number(profileAmount) : null;
-
-    // Validation
-    if (isNaN(userId) || userId <= 0) {
-      showError("Invalid user ID.");
+  const handleProfileRegister = async () => {
+    if (!profileUserId || profileUserId === "0") {
+      showError("Invalid user selected.");
       return;
     }
 
-    if (amount !== null && (isNaN(amount) || amount < 0)) {
-      showError("Amount must be a positive number.");
+    if (!profileIsPaid) {
+      showError("Please select Is Paid.");
       return;
     }
 
-    const payload: CreateProfileDto = {
-      userId,
-      isPaid,
-      amount,
-    };
-
-    console.log("📤 Profile Payload:", JSON.stringify(payload, null, 2)); // 🔍 DEBUG
-
-    const res = await createProfile(payload);
-
-    console.log("✅ Profile Created:", res); // 🔍 SUCCESS
-
-    showSuccess("Profile registered successfully!");
-
-    // Update the form with the new profile ID
-    if (res?.id) {
-      setValue('profileId', res.id);
+    if (!profilesLoaded) {
+      showError("Still loading user data. Please wait a moment and try again.");
+      return;
     }
 
-    setProfileDialogOpen(false);
-    setProfileIsPaid("");
-    setProfileAmount("");
-    setProfileUserId("");
+    try {
+      const userId = Number(profileUserId);
+      const isPaid = profileIsPaid === "true";
+      const amount = profileAmount ? Number(profileAmount) : null;
 
-  } catch (err: any) {
-    console.error("❌ Profile Error:", err); // 🔥 ERROR
-    console.error("Error Response:", err?.response?.data); // 🔥 ERROR DETAILS
-    console.error("Error Status:", err?.response?.status); // Status code
-    console.error("Error Headers:", err?.response?.headers); // Headers
-    console.error("Full Error Object:", JSON.stringify(err, null, 2)); // Full error
-    
-    let errorMsg = "Failed to create profile.";
-    
-    // Handle different error scenarios
-    if (err?.response?.status === 500) {
-      // Try to extract error message from different response formats
-      const responseData = err?.response?.data;
-      const errorText = typeof responseData === 'string' ? responseData : responseData?.message;
-      
-      if (errorText) {
-        errorMsg = "Backend error: " + errorText;
-      } else {
-        errorMsg = "Backend error: Check server logs (500 Internal Server Error)";
+      // Validation
+      if (isNaN(userId) || userId <= 0) {
+        showError("Invalid user ID.");
+        return;
       }
-    } else if (err?.response?.status === 400) {
-      errorMsg = err?.response?.data?.message || "Invalid profile data";
-    } else if (err?.response?.status === 409) {
-      errorMsg = "This user (ID: " + profileUserId + ") already has a profile. Each user can only have one profile.";
-    } else {
-      errorMsg = err?.response?.data?.message || err?.message || "Failed to create profile.";
+
+      if (amount !== null && (isNaN(amount) || amount < 0)) {
+        showError("Amount must be a positive number.");
+        return;
+      }
+
+      const payload: CreateProfileDto = {
+        userId,
+        isPaid,
+        amount,
+      };
+
+      const res = await createProfile(payload);
+
+      showSuccess("Profile registered successfully!");
+
+      // Update the form with the new profile ID
+      if (res?.id) {
+        setValue('profileId', res.id);
+      }
+
+      setProfileDialogOpen(false);
+      setProfileIsPaid("");
+      setProfileAmount("");
+      setProfileUserId("");
+
+    } catch (err: any) {
+
+
+      let errorMsg = "Failed to create profile.";
+
+      // Handle different error scenarios
+      if (err?.response?.status === 500) {
+        // Try to extract error message from different response formats
+        const responseData = err?.response?.data;
+        const errorText = typeof responseData === 'string' ? responseData : responseData?.message;
+
+        if (errorText) {
+          errorMsg = "Backend error: " + errorText;
+        } else {
+          errorMsg = "Backend error: Check server logs (500 Internal Server Error)";
+        }
+      } else if (err?.response?.status === 400) {
+        errorMsg = err?.response?.data?.message || "Invalid profile data";
+      } else if (err?.response?.status === 409) {
+        errorMsg = "This user (ID: " + profileUserId + ") already has a profile. Each user can only have one profile.";
+      } else {
+        errorMsg = err?.response?.data?.message || err?.message || "Failed to create profile.";
+      }
+
+      showError(errorMsg);
     }
-    
-    showError(errorMsg);
-  }
-};
+  };
 
   useEffect(() => {
     // Fetch users, partners, and profiles in parallel
@@ -169,18 +153,16 @@ const handleProfileRegister = async () => {
       .then(([usersRes, partners, profiles]) => {
         setAllUsers(usersRes.data);
         setPartnerList(partners);
-        
         // Filter users who don't have profiles yet
         const userIdsWithProfiles = new Set(profiles.map(p => p.userId));
         const usersWithoutProfiles = usersRes.data.filter(u => !userIdsWithProfiles.has(u.id));
         setAvailableUsers(usersWithoutProfiles);
         setProfilesLoaded(true); // Mark as loaded
-        
-        console.log(`📊 Total Users: ${usersRes.data.length}, Users with Profiles: ${userIdsWithProfiles.size}, Available: ${usersWithoutProfiles.length}`);
+
+
       })
-      .catch((err) => {
-        console.error("Failed to load dropdown data", err);
-        setProfilesLoaded(true); // Mark as loaded even on error to allow user to continue
+      .catch(() => {
+        setProfilesLoaded(true);
       });
   }, []);
 
@@ -216,7 +198,6 @@ const handleProfileRegister = async () => {
     formState: { errors },
   } = useForm<FormValues>({
     shouldUnregister: false,
-    mode: "onTouched",
     defaultValues: { isSmooth: false, isToolUsed: false, status: "Active" },
   });
 
@@ -228,12 +209,18 @@ const handleProfileRegister = async () => {
     ["projectValue", "leaveApplyWay", "startDate", "endDate", "managedByPartnerId", "mobileNumberUsed", "status"],
   ];
 
-  const handleValidate = async (stepIndex: number) => trigger(stepFields[stepIndex]);
+  const handleValidate = async (stepIndex: number) => {
+    let isValid = true;
+    for (const field of stepFields[stepIndex]) {
+      const fieldValid = await trigger(field);
+      if (!fieldValid) isValid = false;
+    }
+    return isValid;
+  };
 
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
-      
       // Format dates to include seconds
       const formatDateTime = (dateStr: string) => {
         if (!dateStr) return dateStr;
@@ -243,7 +230,6 @@ const handleProfileRegister = async () => {
         }
         return dateStr;
       };
-      
       const payload = {
         name: data.name,
         description: data.description,
@@ -267,18 +253,14 @@ const handleProfileRegister = async () => {
         interviewingUserId: data.interviewingUserId ? Number(data.interviewingUserId) : null,
         isToolUsed: data.isToolUsed,
       };
-      
-      console.log("📤 Project Payload:", JSON.stringify(payload, null, 2)); // Debug
-      
+
+
+
       await registerProject(payload);
       showSuccess("Project registered successfully!");
       reset();
       onAdded?.();
     } catch (err: any) {
-      console.error("❌ Project Error:", err); // Debug
-      console.error("Status:", err?.response?.status); // Debug
-      console.error("Error Message:", err?.response?.data?.message); // Debug
-      console.error("Full Response:", err?.response?.data); // Debug
       showError(err?.response?.data?.message || "Failed to create project.");
     } finally {
       setSubmitting(false);
@@ -584,174 +566,99 @@ const handleProfileRegister = async () => {
           <FieldError msg={errors.managedByPartnerId?.message} />
         </div>
 
-        {/* <div>
+        <div className="md:col-span-2">
           <Label>Project Profile</Label>
-          <Controller
-            name="profileId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                options={userOptions}
-                value={field.value ? String(field.value) : ""}
-                onChange={(val) => field.onChange(val ? Number(val) : null)}
-              />
-            )}
-          />
-        </div> */}
-
-  <div className="md:col-span-2">
-    <Label>Project Profile</Label>
-    {availableUsers.length === 0 && (
-      <p className="text-xs text-orange-600 dark:text-orange-400 mb-2">⚠️ All users already have profiles assigned.</p>
-    )}
-
-    <div className="mt-2 flex items-center gap-3">
-
-      {/* User Dropdown - Only show users without profiles */}
-      <div className="flex-1">
-        <Controller
-          name="profileId"
-          control={control}
-          render={({ field }) => (
-            <Select
-              options={availableUserOptions}
-              value={field.value ? String(field.value) : ""}
-              onChange={(val) => {
-                const userId = val ? Number(val) : null;
-                field.onChange(userId);
-                setProfileUserId(val); // sync with modal
-              }}
-            />
+          {availableUsers.length === 0 && (
+            <p className="text-xs text-orange-600 dark:text-orange-400 mb-2">All users already have profiles assigned.</p>
           )}
-        />
-      </div>
 
-      {/* Add New Button */}
-      <Button
-        type="button"
-        variant="outline"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          if (!profileUserId) {
-            showError("Please select a user first");
-            return;
-          }
-          if (availableUsers.length === 0) {
-            showError("All users already have profiles. No users available for new profiles.");
-            return;
-          }
-          setProfileDialogOpen(true);
-        }}
-      >
-        + Add New
-      </Button>
-    </div>
+          <div className="mt-2 flex items-center gap-3">
 
-  {/* Modal */}
-  {profileDialogOpen && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={(e) => e.stopPropagation()}>
+            {/* User Dropdown - Only show users without profiles */}
+            <div className="flex-1">
+              <Controller
+                name="profileId"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    options={availableUserOptions}
+                    value={field.value ? String(field.value) : ""}
+                    onChange={(val) => {
+                      const userId = val ? Number(val) : null;
+                      field.onChange(userId);
+                      setProfileUserId(val); // sync with modal
+                    }}
+                  />
+                )}
+              />
+            </div>
 
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setProfileDialogOpen(false);
-        }}
-      />
-
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-md bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-slate-700">
-          <h2 className="text-gray-900 dark:text-white text-base font-semibold">
-            Add Project Profile
-          </h2>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setProfileDialogOpen(false);
-            }}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="px-5 py-5 space-y-4">
-
-          {/* ❌ REMOVED Select User */}
-
-          {/* Is Paid */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Is Paid <span className="text-red-500">*</span>
-            </label>
-            <Select
-              options={[
-                { value: "", label: "Select..." },
-                { value: "true", label: "Yes" },
-                { value: "false", label: "No" },
-              ]}
-              value={profileIsPaid}
-              onChange={(val) => setProfileIsPaid(val)}
-            />
-          </div>
-
-          {/* Amount */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Amount (₹)
-            </label>
-            <Input
-              type="number"
-              value={profileAmount}
-              onChange={(e) => setProfileAmount(e.target.value)}
-            />
-          </div>
-
-          {/* Actions */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
-            <Button
-              type="button"
-              variant="primary"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleProfileRegister();
-              }}
-              className="flex-1"
-            >
-              Register
-            </Button>
-
+            {/* Add New Button */}
             <Button
               type="button"
               variant="outline"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (!profileUserId) {
+                  showError("Please select a user first");
+                  return;
+                }
+                if (availableUsers.length === 0) {
+                  showError("All users already have profiles. No users available for new profiles.");
+                  return;
+                }
+                setProfileDialogOpen(true);
+              }}
+            >
+              + Add New
+            </Button>
+          </div>
+
+          {profileDialogOpen && (
+            <ModalShell
+              title="Add Project Profile"
+              onClose={() => {
                 setProfileDialogOpen(false);
                 setProfileIsPaid("");
                 setProfileAmount("");
               }}
-              className="flex-1"
+              maxWidth="md"
+              onSave={() => handleProfileRegister()}
+              saveLabel="Register"
             >
-              Cancel
-            </Button>
-          </div>
+              <div className="space-y-4" onClick={(e) => e.stopPropagation()}>
+                {/* Is Paid */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Is Paid <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    options={[
+                      { value: "", label: "Select..." },
+                      { value: "true", label: "Yes" },
+                      { value: "false", label: "No" },
+                    ]}
+                    value={profileIsPaid}
+                    onChange={(val) => setProfileIsPaid(val)}
+                  />
+                </div>
 
+                {/* Amount */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Amount (₹)
+                  </label>
+                  <Input
+                    type="number"
+                    value={profileAmount}
+                    onChange={(e) => setProfileAmount(e.target.value)}
+                  />
+                </div>
+              </div>
+            </ModalShell>
+          )}
         </div>
-      </div>
-    </div>
-  )}
-</div>
 
 
         <div>
