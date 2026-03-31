@@ -74,7 +74,7 @@ const getExpenseColumns = (onApprove: (id: number) => void): ColumnDef<Expense &
     header: "Amount",
     render: (row) => (
       <span className="text-gray-600 dark:text-gray-300">
-        ₹{row.amount}
+        ₹{row.amount ? Number(row.amount).toLocaleString("en-IN") : "-"}
       </span>
     ),
   },
@@ -123,7 +123,7 @@ const getExpenseColumns = (onApprove: (id: number) => void): ColumnDef<Expense &
 const expenseDetailFields: DetailField<Expense & { id: number }>[] = [
   { label: "Expense ID", render: (r) => r.id },
   { label: "Description", render: (r) => r.description },
-  { label: "Amount", render: (r) => `₹${r.amount}` },
+  { label: "Amount", render: (r) => `₹${r.amount ? Number(r.amount).toLocaleString("en-IN") : "-"}` },
   { label: "Category", render: (r) => getCategoryLabel(r.category) },
   { label: "Asset ID", render: (r) => r.assetId || "N/A" },
   { label: "Partner ID", render: (r) => r.partnerId || "N/A" },
@@ -152,7 +152,9 @@ function EditExpenseModal({
 }) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [description, setDescription] = useState(expense.description || "");
-  const [amount, setAmount] = useState<number | string>(expense.amount || "");
+  const [amount, setAmount] = useState<number | string>(
+    expense.amount ? Number(expense.amount).toLocaleString("en-IN") : ""
+  );
   const [assetId, setAssetId] = useState<number | string>(expense.assetId || 0);
   const [partnerId, setPartnerId] = useState<number | string>(expense.partnerId || 0);
   const [employeeId, setEmployeeId] = useState<number | string>(expense.employeeId || 0);
@@ -161,6 +163,14 @@ function EditExpenseModal({
   const [year, setYear] = useState<number | string>(expense.year || "");
   const [isRecurring, setIsRecurring] = useState(expense.isRecurring || false);
   const [saving, setSaving] = useState(false);
+
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
 
   const handleSave = async () => {
     if (!description.trim() || !amount || !category || !month || !year) {
@@ -172,7 +182,7 @@ function EditExpenseModal({
       await patchExpense(expense.id, {
         id: expense.id,
         description,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         assetId: Number(assetId) || null,
         partnerId: Number(partnerId) || null,
         employeeId: Number(employeeId) || null,
@@ -209,7 +219,7 @@ function EditExpenseModal({
 
         <div>
           <Label>Amount (₹) <span className="text-red-500">*</span></Label>
-          <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="0" />
+          <Input type="text" value={amount} onChange={handleAmountChange} placeholder="e.g. 1,500" />
         </div>
         <div>
           <Label>Category <span className="text-red-500">*</span></Label>
@@ -302,6 +312,14 @@ function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded:
 
   const [submitting, setSubmitting] = useState(false);
 
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
+
   const clearInput = () => {
     setDescription("");
     setAmount("");
@@ -324,7 +342,7 @@ function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded:
       setSubmitting(true);
       await createExpense({
         description,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         assetId: Number(assetId) || null,
         partnerId: Number(partnerId) || null,
         employeeId: Number(employeeId) || null,
@@ -364,7 +382,7 @@ function AddExpenseForm({ onAdded, assets, refreshAssets, partners }: { onAdded:
 
             <div>
               <Label>Amount (₹) <span className="text-red-500">*</span></Label>
-              <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="e.g. 1500" />
+              <Input type="text" value={amount} onChange={handleAmountChange} placeholder="e.g. 1,500" />
             </div>
 
             <div>
@@ -527,7 +545,6 @@ export default function ManageExpense() {
       const data = res.data || res;
       setExpenses(data as unknown as (Expense & { id: number })[]);
     } catch (err) {
-      //console.error("Failed to fetch expenses", err);
       showError("Failed to load expenses.");
     } finally {
       setLoading(false);
@@ -555,7 +572,7 @@ export default function ManageExpense() {
       const approverInfo = user?.username || user?.id || "Unknown";
       await approveExpense(id, approverInfo);
       showSuccess("Expense approved successfully.");
-      fetchExpenses(); // Refresh list to get updated status
+      fetchExpenses();
     } catch (err: any) {
       showError(err?.response?.data?.message || "Failed to approve expense.");
     }

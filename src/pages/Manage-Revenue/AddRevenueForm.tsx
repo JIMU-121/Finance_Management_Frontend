@@ -18,13 +18,21 @@ export function AddRevenueForm({
 }) {
   const [partnerId, setPartnerId] = useState<number>(partners[0]?.id || 0);
   const [projectId, setProjectId] = useState<number | null>(null);
-  const [amount, setAmount] = useState<number | string>("");
+  const [amount, setAmount] = useState<string>("");
   const [date, setDate] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
   const [revenueFrom, setRevenueFrom] = useState<boolean>(true);
   const [notes, setNotes] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +45,7 @@ export function AddRevenueForm({
       await createRevenue({
         partnerId,
         projectId: projectId === 0 ? null : projectId,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         date: new Date(date).toISOString(),
         revenue_From: revenueFrom,
         notes,
@@ -96,10 +104,10 @@ export function AddRevenueForm({
               Amount (₹) <span className="text-red-500">*</span>
             </Label>
             <Input
-              type="number"
+              type="text"
               value={amount}
-              onChange={(e: any) => setAmount(e.target.value)}
-              placeholder="e.g. 50000"
+              onChange={handleAmountChange}
+              placeholder="e.g. 50,000"
             />
           </div>
           <div>
@@ -130,7 +138,7 @@ export function AddRevenueForm({
               value={notes}
               onChange={(e: any) => setNotes(e.target.value)}
               placeholder="e.g. Monthly project revenue"
-              disabled = {!revenueFrom}
+              disabled={!revenueFrom}
             />
           </div>
         </div>
