@@ -22,11 +22,21 @@ export function EditRevenueModal({
 }) {
   const [partnerId, setPartnerId] = useState<number>(revenue.partnerId);
   const [projectId, setProjectId] = useState<number | null>(revenue.projectId);
-  const [amount, setAmount] = useState<number | string>(revenue.amount);
+  const [amount, setAmount] = useState<string>(
+    revenue.amount ? revenue.amount.toLocaleString("en-IN") : ""
+  );
   const [date, setDate] = useState<string>(revenue.date.split("T")[0]);
   const [revenueFrom, setRevenueFrom] = useState<boolean>(revenue.revenue_From);
   const [notes, setNotes] = useState<string>(revenue.notes || "");
   const [saving, setSaving] = useState(false);
+
+  const handleAmountChange = (e: any) => {
+    let value = e.target.value;
+    value = value.replace(/,/g, "");
+    if (!/^\d*$/.test(value)) return;
+    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+    setAmount(formatted);
+  };
 
   const handleSave = async () => {
     if (!partnerId || !amount || !date) {
@@ -38,7 +48,7 @@ export function EditRevenueModal({
       await patchRevenue(revenue.id, {
         partnerId,
         projectId: projectId,
-        amount: Number(amount),
+        amount: Number(String(amount).replace(/,/g, "")),
         date: new Date(date).toISOString(),
         revenue_From: revenueFrom,
         notes,
@@ -125,10 +135,10 @@ export function EditRevenueModal({
                 Amount (₹) <span className="text-red-500">*</span>
               </Label>
               <Input
-                type="number"
+                type="text"
                 value={amount}
-                onChange={(e: any) => setAmount(e.target.value)}
-                placeholder="0"
+                onChange={handleAmountChange}
+                placeholder="e.g. 50,000"
               />
             </div>
             <div>

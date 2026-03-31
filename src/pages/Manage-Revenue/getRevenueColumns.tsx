@@ -42,7 +42,7 @@ export const getRevenueColumns = (
     header: "Amount",
     render: (row) => (
       <span className="text-gray-600 dark:text-gray-300 font-medium">
-        ₹{row.amount.toLocaleString()}
+        ₹{row.amount.toLocaleString("en-IN")}
       </span>
     ),
   },

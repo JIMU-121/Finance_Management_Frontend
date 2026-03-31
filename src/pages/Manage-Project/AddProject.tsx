@@ -153,7 +153,6 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
       .then(([usersRes, partners, profiles]) => {
         setAllUsers(usersRes.data);
         setPartnerList(partners);
-
         // Filter users who don't have profiles yet
         const userIdsWithProfiles = new Set(profiles.map(p => p.userId));
         const usersWithoutProfiles = usersRes.data.filter(u => !userIdsWithProfiles.has(u.id));
@@ -222,7 +221,6 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
-
       // Format dates to include seconds
       const formatDateTime = (dateStr: string) => {
         if (!dateStr) return dateStr;
@@ -232,7 +230,6 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
         }
         return dateStr;
       };
-
       const payload = {
         name: data.name,
         description: data.description,
@@ -264,7 +261,6 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
       reset();
       onAdded?.();
     } catch (err: any) {
-
       showError(err?.response?.data?.message || "Failed to create project.");
     } finally {
       setSubmitting(false);
