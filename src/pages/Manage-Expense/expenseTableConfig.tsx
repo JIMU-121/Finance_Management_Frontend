@@ -12,23 +12,47 @@ export const getExpenseColumns = (
     {
       header: "Notes / Description",
       render: (row) => (
-        <span className="block font-semibold text-gray-900 dark:text-white max-w-[200px] truncate">
-          {row.description || "—"}
-        </span>
+        <div className="flex flex-col">
+          <span className="block font-semibold text-gray-900 dark:text-white max-w-[200px] truncate">
+            {row.description || "—"}
+          </span>
+          <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500">
+            {row.expenseDate ? new Date(row.expenseDate).toLocaleDateString() : "—"}
+          </span>
+        </div>
       ),
     },
     {
       header: "Category",
       render: (row) => (
         <span className="text-gray-600 dark:text-gray-300 text-sm">
-          {resolveCategoryName(row.categoryId ?? 0, categories)}
+          {row.categoryName || (categories.length > 0 ? resolveCategoryName(row.categoryId ?? 0, categories) : `Category #${row.categoryId}`)}
         </span>
       ),
     },
     {
+      header: "Related To",
+      render: (row) => {
+        const entityName = row.assetName || row.employeeName || "General";
+        const subText = row.partnerName ? `via ${row.partnerName}` : "";
+        return (
+          <div className="flex flex-col border-l-2 border-transparent hover:border-brand-500 pl-2 transition-colors">
+            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+              {entityName}
+            </span>
+            {subText && (
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                {subText}
+              </span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
       header: "Amount",
       render: (row) => (
-        <span className="font-medium text-gray-800 dark:text-gray-200">
+        <span className="font-semibold text-brand-500 dark:text-brand-400">
           ₹{formatIndianNumber(row.amount)}
         </span>
       ),
@@ -42,26 +66,10 @@ export const getExpenseColumns = (
       ),
     },
     {
-      header: "Recurring",
-      render: (row) => (
-        <span
-          className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${row.isRecurring
-              ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
-              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400"
-            }`}
-        >
-          {row.isRecurring ? "Yes" : "No"}
-        </span>
-      ),
-    },
-    {
       header: "Status",
       render: (row) => {
-        const isApproved = row.status === 1 || row.approvedBy;
+        const isApproved = row.isApproved ?? (row.status === 1 || !!row.approvedBy);
         
-        // Hide approve button for:
-        // 1. Those who aren't partners (and also admins)
-        // 2. The partner who submitted this expense
         const roleStr = String(userRole || "").trim().toLowerCase();
         const isPartner = roleStr === "2" || roleStr === "partner";
         const canApprove = isPartner && currentPartnerId !== row.partnerId;
@@ -97,13 +105,15 @@ export const getExpenseDetailFields = (
   categories: ExpenseCategory[]
 ): DetailField<Expense & { id: number }>[] => [
     { label: "Expense ID", render: (r) => r.id },
-    { label: "Notes", render: (r) => r.description || "—" },
+    { label: "Description", render: (r) => r.description || "—" },
     { label: "Amount", render: (r) => `₹${formatIndianNumber(r.amount)}` },
-    { label: "Category", render: (r) => resolveCategoryName(r.categoryId ?? 0, categories) },
-    { label: "Asset ID", render: (r) => r.assetId || "N/A" },
-    { label: "Partner ID", render: (r) => r.partnerId || "N/A" },
-    { label: "Employee ID", render: (r) => r.employeeId || "N/A" },
-    { label: "Month", render: (r) => r.month },
-    { label: "Year", render: (r) => r.year },
+    { label: "Category", render: (r) => r.categoryName || (categories.length > 0 ? resolveCategoryName(r.categoryId ?? 0, categories) : `Category #${r.categoryId}`) },
+    { label: "Asset", render: (r) => r.assetName || "N/A" },
+    { label: "Employee", render: (r) => r.employeeName || "N/A" },
+    { label: "Partner (Payer)", render: (r) => r.partnerName || "N/A" },
+    { label: "Period", render: (r) => `${r.month}/${r.year}` },
     { label: "Recurring", render: (r) => (r.isRecurring ? "Yes" : "No") },
+    { label: "Approval Status", render: (r) => (r.isApproved ? "Approved" : "Pending") },
+    { label: "Approved By", render: (r) => r.approvedByName || "N/A" },
+    { label: "Expense Date", render: (r) => (r.expenseDate ? new Date(r.expenseDate).toLocaleDateString() : "—") },
   ];
