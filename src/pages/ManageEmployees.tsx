@@ -1,4 +1,5 @@
 import { useState, useEffect, JSX } from "react";
+import { useNavigate } from "react-router";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
@@ -12,6 +13,7 @@ import { getAllUsers, deleteUser } from "../features/users/userApi";
 import { usePagination } from "../hooks/usePagination";
 import { getEmployeeByUserId, createEmployee, updateEmployee } from "../features/users/employeeApi";
 import { EmployeeRecord, DocType, User } from "../types/apiTypes";
+import DatePicker from "../components/form/date-picker";
 import { getAllDocTypes } from "../features/docTypes/docTypeApi";
 import UploadDocumentModal from "../components/employees/UploadDocumentModal";
 // ─── Types and Constants ────────────────────────────────────────────────────────
@@ -192,12 +194,23 @@ function EditEmployeeModal({
 
   const [saving, setSaving] = useState(false);
 
-  const formatAmountInput = (value: any, setter: any) => {
-  value = value.replace(/,/g, "");
-  if (!/^\d*$/.test(value)) return;
-  const formatted = value ? Number(value).toLocaleString("en-IN") : "";
-  setter(formatted);
-};
+  const formatAmountInput = (value: string, setter: (val: string) => void) => {
+    const rawValue = value.replace(/,/g, "");
+    if (!/^\d*$/.test(rawValue)) return;
+    const formatted = rawValue ? Number(rawValue).toLocaleString("en-IN") : "";
+    setter(formatted);
+    return rawValue;
+  };
+
+  const handleCTCChange = (value: string) => {
+    const rawCTC = formatAmountInput(value, setCurrentCTC);
+    if (rawCTC) {
+      const monthly = Math.round(Number(rawCTC) / 12);
+      setMonthlySalary(monthly.toLocaleString("en-IN"));
+    } else {
+      setMonthlySalary("");
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -233,7 +246,7 @@ function EditEmployeeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto custom-scrollbar">
         {/* Header */}
@@ -284,6 +297,7 @@ function EditEmployeeModal({
             <Label>Department</Label>
             <Select
               options={DepartmentType}
+              value={DepartmentType.find((d) => d.label === department)?.value || ""}
               onChange={(val) => setDepartment(DepartmentType.find((d) => d.value === val)?.label ?? val)}
             />
           </div>
@@ -292,23 +306,31 @@ function EditEmployeeModal({
             <Input value={position} onChange={(e: any) => setPosition(e.target.value)} placeholder="Backend Developer" />
           </div>
           <div>
-            <Label>Monthly Salary</Label>
-          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
-          <div>
             <Label>Previous CTC</Label>
             <Input type="text" value={previousCTC} onChange={(e: any) => formatAmountInput(e.target.value, setPreviousCTC)} />
           </div>
           <div>
             <Label>Current CTC</Label>
-            <Input type="text" value={currentCTC} onChange={(e: any) => formatAmountInput(e.target.value, setCurrentCTC)}/>
+            <Input type="text" value={currentCTC} onChange={(e: any) => handleCTCChange(e.target.value)}/>
           </div>
           <div>
-            <Label>Joining Date</Label>
-            <Input type="datetime-local" value={joinDate} onChange={(e: any) => setJoinDate(e.target.value)} />
+            <Label>Monthly Salary</Label>
+          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
+          <div>
+            <DatePicker
+              id="edit-joinDate"
+              label="Joining Date"
+              defaultDate={joinDate}
+              onChange={(_d, str) => setJoinDate(str)}
+            />
           </div>
           <div>
-            <Label>Relieving Date</Label>
-            <Input type="datetime-local" value={relievingDate} onChange={(e: any) => setRelievingDate(e.target.value)} />
+            <DatePicker
+              id="edit-relievingDate"
+              label="Relieving Date"
+              defaultDate={relievingDate || undefined}
+              onChange={(_d, str) => setRelievingDate(str)}
+            />
           </div>
           <div>
             <Label>Leave Taken</Label>
@@ -364,6 +386,7 @@ export default function ManageEmployees() {
   const [uploadEmployee, setUploadEmployee] = useState<EmployeeUser | null>(null);
   const [docTypes, setDocTypes] = useState<DocType[]>([]);
 
+  const navigate = useNavigate();
   const { pageNumber, pageSize, setTotalItems, paginationProps } = usePagination();
 
   const fetchEmployees = async () => {
@@ -504,12 +527,12 @@ export default function ManageEmployees() {
             </div>
 
             {/* Right - Add Button */}
-            <button
-              onClick={() => setActiveTab("active")}
+            <Button
+              onClick={() => navigate("/manage-employees/add")}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
             >
               + Add Employee
-            </button>
+            </Button>
           </div>
         </div>
 
