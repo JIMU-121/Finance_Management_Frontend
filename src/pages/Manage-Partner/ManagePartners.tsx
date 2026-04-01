@@ -544,7 +544,7 @@ export default function ManagePartners() {
 
             {/* Right - Add Button */}
             <button
-              onClick={handleRegisterUser}
+              onClick={() => setActiveTab("registered")}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
             >
               + Add Partner
