@@ -32,6 +32,9 @@ import ManageRevenue from "./pages/Manage-Revenue";
 import ManageCategory from "./pages/Manage-Category";
 import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
 import AddPartner from "./pages/Manage-Partner/AddPartner";
+import AddEmployee from "./pages/AddEmployee";
+import AddExpense from "./pages/Manage-Expense/AddExpense";
+import AddCategory from "./pages/Manage-Category/AddCategory";
 
 export default function App() {
   return (
@@ -52,11 +55,14 @@ export default function App() {
               <Route path="/manage-partner/register" element={<AddPartner />} />
               <Route path="/manage-user" element={<ManageUser />} />
               <Route path="/manage-employees" element={<ManageEmployees />} />
+              <Route path="/manage-employees/add" element={<AddEmployee />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/document-type" element={<ManageDocumentType />} />
               <Route path="/manage-asset" element={<ManageAsset />} />
               <Route path="/manage-expense" element={<ManageExpense />} />
+              <Route path="/manage-expense/add" element={<AddExpense />} />
               <Route path="/manage-category" element={<ManageCategory />} />
+              <Route path="/manage-category/add" element={<AddCategory />} />
               <Route path="/blank" element={<Blank />} />
               <Route path="/manage-project" element={<ManageProject />} />
               <Route path="/manage-revenue" element={<ManageRevenue />} />
