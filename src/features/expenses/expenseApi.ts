@@ -28,11 +28,9 @@ export const deleteExpense = async (id: number) => {
   const response = await axiosInstance.delete<ApiResponse<null>>(API_ENDPOINTS.EXPENSE.DELETE(id));
   return response.data;
 };
-export const approveExpense = async (id: number, approverInfo: string) => {
+export const approveExpense = async (id: number, userId: number) => {
   const response = await axiosInstance.patch<ApiResponse<null>>(
-    API_ENDPOINTS.EXPENSE.APPROVE(id),
-    JSON.stringify(approverInfo),
-    { headers: { "Content-Type": "application/json" } }
+    `${API_ENDPOINTS.EXPENSE.APPROVE(id)}?approvedBy=${userId}`
   );
   return response.data;
 };

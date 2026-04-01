@@ -191,6 +191,13 @@ export interface Asset {
   purchase_Date: string;
 }
 
+// Expense Category Model
+export interface ExpenseCategory {
+  id: number;
+  categoryName: string;
+  isRecurring: boolean;
+}
+
 // Expense Models
 export interface Expense {
   id?: number;
@@ -199,7 +206,7 @@ export interface Expense {
   employeeId: number | null;
   description: string;
   amount: number;
-  category: number;
+  categoryId: number | null;
   month: number;
   year: number;
   isRecurring: boolean;
@@ -214,7 +221,7 @@ export interface RegisterExpensePayload {
   employeeId: number | null;
   description: string;
   amount: number;
-  category: number;
+  categoryId: number | null;
   month: number;
   year: number;
   isRecurring: boolean;

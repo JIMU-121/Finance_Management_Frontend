@@ -1,21 +1,26 @@
 import { useState, useEffect, JSX } from "react";
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import PageMeta from "../components/common/PageMeta";
-import Label from "../components/form/Label";
-import Input from "../components/form/input/InputField";
-import Button from "../components/ui/button/Button";
-import { EyeCloseIcon, EyeIcon } from "../icons";
-import { showError, showSuccess } from "../utils/toast";
+import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import PageMeta from "../../components/common/PageMeta";
+import Label from "../../components/form/Label";
+import Input from "../../components/form/input/InputField";
+import Button from "../../components/ui/button/Button";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
+import { showError, showSuccess } from "../../utils/toast";
+import { getAllUsers, deleteUser, User } from "../../features/users/userApi";
 import {
-  getAllUsers,
-  deleteUser,
-  User,
-} from "../features/users/userApi";
-import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
-import Spinner from "../components/ui/spinner/Spinner";
-import { usePagination } from "../hooks/usePagination";
-import { getPartnerByUserId, createPartner, updatePartner } from "../features/users/partnerApi";
-import { Partner } from "../types/apiTypes";
+  DataTable,
+  ColumnDef,
+  DetailField,
+} from "../../components/ui/table/DataTable";
+import Spinner from "../../components/ui/spinner/Spinner";
+import { usePagination } from "../../hooks/usePagination";
+import {
+  getPartnerByUserId,
+  createPartner,
+  updatePartner,
+} from "../../features/users/partnerApi";
+import { Partner } from "../../types/apiTypes";
+import { useNavigate } from "react-router";
 
 // ─── Types and Constants ──────────────────────────────────────────────────────
 
@@ -168,8 +173,11 @@ function EditPartnerModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div className="relative z-10 mx-4 w-full max-w-2xl rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900 max-h-[90vh] overflow-y-auto custom-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
@@ -278,6 +286,7 @@ export default function ManagePartners() {
   const [inactivePartners, setInactivePartners] = useState<PartnerUser[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
+  const navigate = useNavigate();
 
   // Pagination hook
   const { pageNumber, pageSize, setTotalItems, paginationProps } = usePagination();
@@ -361,26 +370,45 @@ export default function ManagePartners() {
   };
 
   // ── Tab switch ───────────────────────────────────────────────────────────────
-  const tabs: { key: "registered" | "inactive"; label: string; icon: JSX.Element }[] = [
-    {
-      key: "registered",
-      label: "Registered Partners",
-      icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
-        </svg>
-      ),
-    },
-    // {
-    //   key: "inactive",
-    //   label: "Inactive Partners",
-    //   icon: (
-    //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    //     </svg>
-    //   ),
-    // },
-  ];
+  const tabs: {
+    key: "registered" | "inactive";
+    label: string;
+    icon: JSX.Element;
+  }[] = [
+      {
+        key: "registered",
+        label: "Registered Partners",
+        icon: (
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+            />
+          </svg>
+        ),
+      },
+      // {
+      //   key: "inactive",
+      //   label: "Inactive Partners",
+      //   icon: (
+      //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+      //     </svg>
+      //   ),
+      // },
+    ];
+
+  function handleRegisterUser() {
+    // setActiveTab("registered");
+    navigate("/manage-partner/register");
+  }
 
   return (
     <div>
@@ -390,20 +418,31 @@ export default function ManagePartners() {
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {/* ── Tab header ── */}
         <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
-          <div className="flex items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+          <div className="flex items-center justify-between">
+            {/* Left - Tabs */}
+            <div className="flex items-center gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
+                    ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right - Add Button */}
+            <button
+              onClick={handleRegisterUser}
+              className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
+            >
+              + Add Partner
+            </button>
           </div>
         </div>
 

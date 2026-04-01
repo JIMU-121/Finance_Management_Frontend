@@ -90,5 +90,12 @@ export const API_ENDPOINTS = {
   },
   EMPLOYEE_DOCUMENT: {
     UPLOAD: `${API_PREFIX}/EmployeeDocument/upload`,
-  }
+  },
+  CATEGORY: {
+    GET_ALL: `${API_PREFIX}/Category`,
+    GET_BY_ID: (id: number) => `${API_PREFIX}/Category/${id}`,
+    CREATE: `${API_PREFIX}/Category`,
+    UPDATE: (id: number) => `${API_PREFIX}/Category/${id}`,
+    DELETE: (id: number) => `${API_PREFIX}/Category/${id}`,
+  },
 } as const;

@@ -20,7 +20,7 @@ import Home from "./pages/Dashboard/Home";
 import EmployeeDashboard from "./pages/Dashboard/EmployeeDashboard";
 import Profile from "./pages/UserProfiles";
 import ManageUser from "./pages/ManageUser";
-import ManagePartners from "./pages/ManagePartners";
+import ManagePartners from "./pages/Manage-Partner/ManagePartners";
 import ManageEmployees from "./pages/ManageEmployees";
 import ManageDocumentType from "./pages/ManageDocumentType";
 import ManageAsset from "./pages/Manage-Asset";
@@ -29,7 +29,12 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ManageProject from "./pages/Manage-Project";
 import ManageRevenue from "./pages/Manage-Revenue";
+import ManageCategory from "./pages/Manage-Category";
 import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
+import AddPartner from "./pages/Manage-Partner/AddPartner";
+import AddEmployee from "./pages/AddEmployee";
+import AddExpense from "./pages/Manage-Expense/AddExpense";
+import AddCategory from "./pages/Manage-Category/AddCategory";
 
 export default function App() {
   return (
@@ -39,7 +44,7 @@ export default function App() {
         <Routes>
 
           {/* ── Protected: must be logged in with a valid token ── */}
-          <Route element={<ProtectedRoute allowedRoles={"Admin"} />}>
+          <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index path="/" element={<Home />} />
               <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
@@ -47,12 +52,17 @@ export default function App() {
               {/* Others Page */}
               <Route path="/profile" element={<Profile />} />
               <Route path="/manage-partner" element={<ManagePartners />} />
+              <Route path="/manage-partner/register" element={<AddPartner />} />
               <Route path="/manage-user" element={<ManageUser />} />
               <Route path="/manage-employees" element={<ManageEmployees />} />
+              <Route path="/manage-employees/add" element={<AddEmployee />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/document-type" element={<ManageDocumentType />} />
               <Route path="/manage-asset" element={<ManageAsset />} />
               <Route path="/manage-expense" element={<ManageExpense />} />
+              <Route path="/manage-expense/add" element={<AddExpense />} />
+              <Route path="/manage-category" element={<ManageCategory />} />
+              <Route path="/manage-category/add" element={<AddCategory />} />
               <Route path="/blank" element={<Blank />} />
               <Route path="/manage-project" element={<ManageProject />} />
               <Route path="/manage-revenue" element={<ManageRevenue />} />
