@@ -29,6 +29,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ManageProject from "./pages/Manage-Project";
 import ManageRevenue from "./pages/Manage-Revenue";
+import ManageCategory from "./pages/Manage-Category";
 import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
 import AddPartner from "./pages/Manage-Partner/AddPartner";
 
@@ -40,7 +41,7 @@ export default function App() {
         <Routes>
 
           {/* ── Protected: must be logged in with a valid token ── */}
-          <Route element={<ProtectedRoute allowedRoles={"Admin"} />}>
+          <Route element={<ProtectedRoute />}>
             <Route element={<AppLayout />}>
               <Route index path="/" element={<Home />} />
               <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
@@ -55,6 +56,7 @@ export default function App() {
               <Route path="/document-type" element={<ManageDocumentType />} />
               <Route path="/manage-asset" element={<ManageAsset />} />
               <Route path="/manage-expense" element={<ManageExpense />} />
+              <Route path="/manage-category" element={<ManageCategory />} />
               <Route path="/blank" element={<Blank />} />
               <Route path="/manage-project" element={<ManageProject />} />
               <Route path="/manage-revenue" element={<ManageRevenue />} />

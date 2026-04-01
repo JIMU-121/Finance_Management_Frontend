@@ -97,11 +97,10 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Status",
     render: (row) => (
       <span
-        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-          row._isPartnerCreated
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-        }`}
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${row._isPartnerCreated
+          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+          }`}
       >
         {row._isPartnerCreated ? "Created" : "Not Created"}
       </span>
@@ -477,35 +476,35 @@ export default function ManagePartners() {
     label: string;
     icon: JSX.Element;
   }[] = [
-    {
-      key: "registered",
-      label: "Registered Partners",
-      icon: (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
-          />
-        </svg>
-      ),
-    },
-    // {
-    //   key: "inactive",
-    //   label: "Inactive Partners",
-    //   icon: (
-    //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    //     </svg>
-    //   ),
-    // },
-  ];
+      {
+        key: "registered",
+        label: "Registered Partners",
+        icon: (
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+            />
+          </svg>
+        ),
+      },
+      // {
+      //   key: "inactive",
+      //   label: "Inactive Partners",
+      //   icon: (
+      //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+      //     </svg>
+      //   ),
+      // },
+    ];
 
   function handleRegisterUser() {
     // setActiveTab("registered");
@@ -530,11 +529,10 @@ export default function ManagePartners() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                    activeTab === tab.key
-                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
+                    ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -544,7 +542,7 @@ export default function ManagePartners() {
 
             {/* Right - Add Button */}
             <button
-              onClick={() => setActiveTab("registered")}
+              onClick={handleRegisterUser}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
             >
               + Add Partner
