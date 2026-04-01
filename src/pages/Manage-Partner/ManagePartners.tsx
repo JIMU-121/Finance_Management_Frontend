@@ -1,25 +1,26 @@
 import { useState, useEffect, JSX } from "react";
-import PageBreadcrumb from "../components/common/PageBreadCrumb";
-import PageMeta from "../components/common/PageMeta";
-import Label from "../components/form/Label";
-import Input from "../components/form/input/InputField";
-import Button from "../components/ui/button/Button";
-import { EyeCloseIcon, EyeIcon } from "../icons";
-import { showError, showSuccess } from "../utils/toast";
-import { getAllUsers, deleteUser, User } from "../features/users/userApi";
+import PageBreadcrumb from "../../components/common/PageBreadCrumb";
+import PageMeta from "../../components/common/PageMeta";
+import Label from "../../components/form/Label";
+import Input from "../../components/form/input/InputField";
+import Button from "../../components/ui/button/Button";
+import { EyeCloseIcon, EyeIcon } from "../../icons";
+import { showError, showSuccess } from "../../utils/toast";
+import { getAllUsers, deleteUser, User } from "../../features/users/userApi";
 import {
   DataTable,
   ColumnDef,
   DetailField,
-} from "../components/ui/table/DataTable";
-import Spinner from "../components/ui/spinner/Spinner";
-import { usePagination } from "../hooks/usePagination";
+} from "../../components/ui/table/DataTable";
+import Spinner from "../../components/ui/spinner/Spinner";
+import { usePagination } from "../../hooks/usePagination";
 import {
   getPartnerByUserId,
   createPartner,
   updatePartner,
-} from "../features/users/partnerApi";
-import { Partner } from "../types/apiTypes";
+} from "../../features/users/partnerApi";
+import { Partner } from "../../types/apiTypes";
+import { useNavigate } from "react-router";
 
 // ─── Types and Constants ──────────────────────────────────────────────────────
 
@@ -382,6 +383,7 @@ export default function ManagePartners() {
   const [inactivePartners, setInactivePartners] = useState<PartnerUser[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
+  const navigate = useNavigate();
 
   // Pagination hook
   const { pageNumber, pageSize, setTotalItems, paginationProps } =
@@ -505,6 +507,11 @@ export default function ManagePartners() {
     // },
   ];
 
+  function handleRegisterUser() {
+    // setActiveTab("registered");
+    navigate("/manage-partner/register");
+  }
+
   return (
     <div>
       <PageMeta
@@ -537,7 +544,7 @@ export default function ManagePartners() {
 
             {/* Right - Add Button */}
             <button
-              onClick={() => setActiveTab("registered")}
+              onClick={handleRegisterUser}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
             >
               + Add Partner
