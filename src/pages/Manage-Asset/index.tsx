@@ -13,7 +13,11 @@ import {
   updateAsset,
 } from "../../features/assets/assetApi";
 import { Asset } from "../../types/apiTypes";
-import { DataTable, ColumnDef, DetailField } from "../../components/ui/table/DataTable";
+import {
+  DataTable,
+  ColumnDef,
+  DetailField,
+} from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,14 +83,17 @@ const assetDetailFields: DetailField<Asset & { id: number }>[] = [
   { label: "Asset ID", render: (r) => r.id },
   { label: "Name", render: (r) => r.name },
   { label: "Description", render: (r) => r.description },
-  { label: "Amount", render: (r) => `₹${r.amount ? r.amount.toLocaleString("en-IN") : "-"}` },
   {
-    label: "Purchase Date", render: (r) => {
+    label: "Amount",
+    render: (r) => `₹${r.amount ? r.amount.toLocaleString("en-IN") : "-"}`,
+  },
+  {
+    label: "Purchase Date",
+    render: (r) => {
       const datePart = safeFormatDate(r.purchase_Date as unknown as string);
 
       return datePart || "-";
-
-    }
+    },
   },
 ];
 
@@ -104,9 +111,11 @@ function EditAssetModal({
   const [name, setName] = useState(asset.name);
   const [description, setDescription] = useState(asset.description);
   const [amount, setAmount] = useState<number | string>(
-    asset.amount ? asset.amount.toLocaleString("en-IN") : ""
+    asset.amount ? asset.amount.toLocaleString("en-IN") : "",
   );
-  const [purchaseDate, setPurchaseDate] = useState(() => safeFormatDate(asset.purchase_Date as unknown as string));
+  const [purchaseDate, setPurchaseDate] = useState(() =>
+    safeFormatDate(asset.purchase_Date as unknown as string),
+  );
   const [saving, setSaving] = useState(false);
 
   const handleAmountChange = (e: any) => {
@@ -143,11 +152,16 @@ function EditAssetModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
       <div className="relative z-10 mx-4 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">Edit Asset</h2>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">
+              Edit Asset
+            </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Updating: {asset.name}
             </p>
@@ -156,24 +170,47 @@ function EditAssetModal({
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
           >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
         <div className="space-y-4 p-6">
           <div>
             <Label>Asset Name</Label>
-            <Input value={name} onChange={(e: any) => setName(e.target.value)} placeholder="MacBook Pro" />
+            <Input
+              value={name}
+              onChange={(e: any) => setName(e.target.value)}
+              placeholder="MacBook Pro"
+            />
           </div>
           <div>
             <Label>Description</Label>
-            <Input value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="Laptop for development" />
+            <Input
+              value={description}
+              onChange={(e: any) => setDescription(e.target.value)}
+              placeholder="Laptop for development"
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Amount</Label>
-              <Input type="text" value={amount} onChange={handleAmountChange} placeholder="e.g. 2,00,000" />
+              <Input
+                type="text"
+                value={amount}
+                onChange={handleAmountChange}
+                placeholder="e.g. 2,00,000"
+              />
             </div>
             <div>
               <DatePicker
@@ -191,8 +228,14 @@ function EditAssetModal({
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 px-6 py-5 dark:border-gray-800">
-          <Button variant="outline" onClick={onClose} className="px-5 py-2">Cancel</Button>
-          <Button onClick={handleSave} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 shadow-theme-xs transition-colors" disabled={saving}>
+          <Button variant="outline" onClick={onClose} className="px-5 py-2">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSave}
+            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 shadow-theme-xs transition-colors"
+            disabled={saving}
+          >
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
@@ -203,7 +246,11 @@ function EditAssetModal({
 
 // ─── Add Form ────────────────────────────────────────────────────────────
 
-export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void }) {
+export function AddAssetForm({
+  onAdded,
+}: {
+  onAdded: (assetId?: number) => void;
+}) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState<number | string>("");
@@ -219,7 +266,10 @@ export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void 
   };
 
   const clearInput = () => {
-    setName(""); setDescription(""); setAmount(""); setPurchaseDate("");
+    setName("");
+    setDescription("");
+    setAmount("");
+    setPurchaseDate("");
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -234,7 +284,7 @@ export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void 
         name,
         description,
         amount: Number(String(amount).replace(/,/g, "")),
-        purchase_Date: purchaseDate
+        purchase_Date: purchaseDate,
       });
 
       showSuccess("Asset added successfully.");
@@ -255,24 +305,46 @@ export function AddAssetForm({ onAdded }: { onAdded: (assetId?: number) => void 
             Asset Information
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Provide the necessary details to register a new asset into the system.
+            Provide the necessary details to register a new asset into the
+            system.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div className="md:col-span-2">
-            <Label>Asset Name <span className="text-red-500">*</span></Label>
-            <Input type="text" value={name} onChange={(e: any) => setName(e.target.value)} placeholder="e.g. Dell UltraSharp 27-inch Monitor" />
+            <Label>
+              Asset Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              type="text"
+              value={name}
+              onChange={(e: any) => setName(e.target.value)}
+              placeholder="e.g. Dell UltraSharp 27-inch Monitor"
+            />
           </div>
 
           <div className="md:col-span-2">
-            <Label>Description <span className="text-red-500">*</span></Label>
-            <Input type="text" value={description} onChange={(e: any) => setDescription(e.target.value)} placeholder="e.g. 4K USB-C Hub Monitor for design team" />
+            <Label>
+              Description <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              type="text"
+              value={description}
+              onChange={(e: any) => setDescription(e.target.value)}
+              placeholder="e.g. 4K USB-C Hub Monitor for design team"
+            />
           </div>
 
           <div>
-            <Label>Amount (₹) <span className="text-red-500">*</span></Label>
-            <Input type="number" value={amount} onChange={(e: any) => setAmount(e.target.value)} placeholder="e.g. 500" />
+            <Label>
+              Amount (₹) <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e: any) => setAmount(e.target.value)}
+              placeholder="e.g. 500"
+            />
           </div>
 
           <div>
@@ -319,7 +391,9 @@ export default function ManageAsset() {
   const [activeTab, setActiveTab] = useState<"add" | "view">("view");
   const [assets, setAssets] = useState<(Asset & { id: number })[]>([]);
   const [loadingAssets, setLoadingAssets] = useState(false);
-  const [editAsset, setEditAsset] = useState<(Asset & { id: number }) | null>(null);
+  const [editAsset, setEditAsset] = useState<(Asset & { id: number }) | null>(
+    null,
+  );
 
   const fetchAssets = async () => {
     try {
@@ -355,8 +429,18 @@ export default function ManageAsset() {
       key: "view",
       label: "View Assets",
       icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+          />
         </svg>
       ),
     },
@@ -364,8 +448,18 @@ export default function ManageAsset() {
     //   key: "add",
     //   label: "Add Asset",
     //   icon: (
-    //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    //     <svg
+    //       className="h-4 w-4"
+    //       fill="none"
+    //       stroke="currentColor"
+    //       viewBox="0 0 24 24"
+    //     >
+    //       <path
+    //         strokeLinecap="round"
+    //         strokeLinejoin="round"
+    //         strokeWidth={2}
+    //         d="M12 4v16m8-8H4"
+    //       />
     //     </svg>
     //   ),
     // },
@@ -378,20 +472,32 @@ export default function ManageAsset() {
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
-          <div className="flex items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          <div className="flex items-center m-2 justify-between">
+            {/* Left - Tabs */}
+            <div className="flex items-center gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right - Add Button */}
+            <Button
+              onClick={() => setActiveTab("add")}
+              className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2"
+            >
+              + Add Asset
+            </Button>
           </div>
         </div>
 
@@ -405,7 +511,11 @@ export default function ManageAsset() {
           {activeTab === "view" && (
             <>
               {loadingAssets ? (
-                <Spinner size="md" label="Loading assets..." className="py-16" />
+                <Spinner
+                  size="md"
+                  label="Loading assets..."
+                  className="py-16"
+                />
               ) : (
                 <DataTable
                   data={assets}
@@ -416,7 +526,6 @@ export default function ManageAsset() {
                   searchKeys={["name", "description"]}
                   searchPlaceholder="Search by name or description..."
                   title="All Assets"
-                // Pagination not added strictly yet since API might just return all, but we could hook it up if needed.
                 />
               )}
             </>
