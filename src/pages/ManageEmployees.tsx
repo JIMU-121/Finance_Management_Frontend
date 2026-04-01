@@ -68,7 +68,10 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
   },
   {
     header: "CTC",
-    render: (row) => row.employeeRecord?.currentCTC ?? "—",
+    render: (row) => {
+    const val = Number(row.employeeRecord?.currentCTC || 0);
+    return val ? val.toLocaleString("en-IN") : "—";
+  },
     className: "whitespace-nowrap font-medium text-gray-800 dark:text-white",
   },
   {
@@ -132,9 +135,19 @@ const detailFields: DetailField<EmployeeUser>[] = [
   { label: "Branch ID", render: (r) => r.employeeRecord?.branchId ?? "—" },
   { label: "Department", render: (r) => r.employeeRecord?.department ?? "—" },
   { label: "Position", render: (r) => r.employeeRecord?.position ?? "—" },
-  { label: "Monthly Salary", render: (r) => r.employeeRecord?.monthlySalary ?? "—" },
-  { label: "Previous CTC", render: (r) => r.employeeRecord?.previousCTC ?? "—" },
-  { label: "Current CTC", render: (r) => r.employeeRecord?.currentCTC ?? "—" },
+{ label: "Monthly Salary", render: (r) => {
+  const val = Number(r.employeeRecord?.monthlySalary || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+}},
+
+{ label: "Previous CTC", render: (r) => {
+  const val = Number(r.employeeRecord?.previousCTC || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+} },
+{ label: "Current CTC", render: (r) => {
+  const val = Number(r.employeeRecord?.currentCTC || 0);
+  return val ? val.toLocaleString("en-IN") : "—";
+} },
   { label: "Leaves Taken", render: (r) => r.employeeRecord?.takenLeave ?? "—" },
   { label: "Status", render: (r) => r._isEmployeeCreated ? "Created" : "Not Created" },
   {
@@ -179,6 +192,13 @@ function EditEmployeeModal({
 
   const [saving, setSaving] = useState(false);
 
+  const formatAmountInput = (value: any, setter: any) => {
+  value = value.replace(/,/g, "");
+  if (!/^\d*$/.test(value)) return;
+  const formatted = value ? Number(value).toLocaleString("en-IN") : "";
+  setter(formatted);
+};
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -186,14 +206,14 @@ function EditEmployeeModal({
         userId: employee.id,
         department,
         position,
-        monthlySalary: Number(monthlySalary) || 0,
-        currentCTC: Number(currentCTC) || 0,
+         monthlySalary: Number(String(monthlySalary).replace(/,/g, "")) || 0,
+        currentCTC: Number(String(currentCTC).replace(/,/g, "")) || 0,
         joinDate,
         relievingDate: relievingDate || undefined,
         takenLeave: Number(takenLeave) || 0,
         employeeCode,
         branchId: Number(branchId) || 0,
-        previousCTC: Number(previousCTC) || 0,
+        previousCTC: Number(String(previousCTC).replace(/,/g, "")) || 0,
       };
 
       if (employee._isEmployeeCreated && employee.employeeRecord?.id) {
@@ -273,15 +293,14 @@ function EditEmployeeModal({
           </div>
           <div>
             <Label>Monthly Salary</Label>
-            <Input type="number" value={monthlySalary} onChange={(e: any) => setMonthlySalary(e.target.value)} placeholder="55000" />
-          </div>
+          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
           <div>
             <Label>Previous CTC</Label>
-            <Input type="number" value={previousCTC} onChange={(e: any) => setPreviousCTC(e.target.value)} placeholder="500000" />
+            <Input type="text" value={previousCTC} onChange={(e: any) => formatAmountInput(e.target.value, setPreviousCTC)} />
           </div>
           <div>
             <Label>Current CTC</Label>
-            <Input type="number" value={currentCTC} onChange={(e: any) => setCurrentCTC(e.target.value)} placeholder="660000" />
+            <Input type="text" value={currentCTC} onChange={(e: any) => formatAmountInput(e.target.value, setCurrentCTC)}/>
           </div>
           <div>
             <Label>Joining Date</Label>
@@ -427,15 +446,15 @@ export default function ManageEmployees() {
         </svg>
       ),
     },
-    {
-      key: "inactive",
-      label: "Inactive Employees",
-      icon: (
-        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
-    },
+    // {
+    //   key: "inactive",
+    //   label: "Inactive Employees",
+    //   icon: (
+    //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    //     </svg>
+    //   ),
+    // },
   ];
 
   return (
@@ -465,20 +484,32 @@ export default function ManageEmployees() {
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] mt-6">
         {/* ── Tab header ── */}
         <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
-          <div className="flex items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          <div className="flex items-center justify-between">
+            {/* Left - Tabs */}
+            <div className="flex items-center gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right - Add Button */}
+            <button
+              onClick={() => setActiveTab("active")}
+              className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
+            >
+              + Add Employee
+            </button>
           </div>
         </div>
 

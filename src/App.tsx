@@ -20,7 +20,7 @@ import Home from "./pages/Dashboard/Home";
 import EmployeeDashboard from "./pages/Dashboard/EmployeeDashboard";
 import Profile from "./pages/UserProfiles";
 import ManageUser from "./pages/ManageUser";
-import ManagePartners from "./pages/ManagePartners";
+import ManagePartners from "./pages/Manage-Partner/ManagePartners";
 import ManageEmployees from "./pages/ManageEmployees";
 import ManageDocumentType from "./pages/ManageDocumentType";
 import ManageAsset from "./pages/Manage-Asset";
@@ -31,6 +31,7 @@ import ManageProject from "./pages/Manage-Project";
 import ManageRevenue from "./pages/Manage-Revenue";
 import ManageCategory from "./pages/Manage-Category";
 import { ProtectedRoute, GuestRoute } from "./components/auth/RouteGuards";
+import AddPartner from "./pages/Manage-Partner/AddPartner";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
               {/* Others Page */}
               <Route path="/profile" element={<Profile />} />
               <Route path="/manage-partner" element={<ManagePartners />} />
+              <Route path="/manage-partner/register" element={<AddPartner />} />
               <Route path="/manage-user" element={<ManageUser />} />
               <Route path="/manage-employees" element={<ManageEmployees />} />
               <Route path="/calendar" element={<Calendar />} />

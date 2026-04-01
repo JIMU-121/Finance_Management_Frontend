@@ -123,6 +123,7 @@ export default function ManageExpense() {
       await approveExpense(id, Number(user.id));
       showSuccess("Expense approved successfully.");
       fetchExpenses();
+      fetchExpenses();
     } catch (err: any) {
       showError(err?.response?.data?.message || "Approval failed.");
     }
