@@ -9,21 +9,19 @@ import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Spinner from "../components/ui/spinner/Spinner";
 import { showError, showSuccess } from "../utils/toast";
-import { getAllUsers, deleteUser } from "../features/users/userApi";
+import { deleteUser } from "../features/users/userApi";
 import { usePagination } from "../hooks/usePagination";
 import { getEmployeeByUserId, createEmployee, updateEmployee } from "../features/users/employeeApi";
 import { EmployeeRecord, DocType, User } from "../types/apiTypes";
 import DatePicker from "../components/form/date-picker";
 import { getAllDocTypes } from "../features/docTypes/docTypeApi";
 import UploadDocumentModal from "../components/employees/UploadDocumentModal";
-// ─── Types and Constants ────────────────────────────────────────────────────────
-interface EmployeeUser extends User {
-  employeeRecord?: EmployeeRecord;
-  _isEmployeeCreated?: boolean;
-}
 
-// Assuming Employee Role is 3 or 'Employee'
-const EMPLOYEE_ROLE_ID = 3;
+// ─── Types and Constants ────────────────────────────────────────────────────────
+type EmployeeUser = EmployeeRecord & {
+  id: number; // Required for DataTable
+  _isEmployeeCreated?: boolean;
+};
 
 const DepartmentType = [
   { value: "1", label: "HR" },
@@ -39,15 +37,15 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
     render: (row) => (
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-          {row.firstName?.[0]?.toUpperCase() ?? "E"}
-          {row.lastName?.[0]?.toUpperCase() ?? ""}
+          {row.user?.firstName?.[0]?.toUpperCase() ?? "E"}
+          {row.user?.lastName?.[0]?.toUpperCase() ?? ""}
         </div>
         <div>
           <span className="block font-semibold text-gray-900 dark:text-white">
-            {row.firstName} {row.lastName}
+            {row.user?.firstName} {row.user?.lastName}
           </span>
           <span className="block text-xs text-gray-500 dark:text-gray-400">
-            {row.email}
+            {row.user?.email}
           </span>
         </div>
       </div>
@@ -55,31 +53,31 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
   },
   {
     header: "Emp Code",
-    render: (row) => row.employeeRecord?.employeeCode ?? "—",
+    render: (row) => row.employeeCode ?? "—",
     className: "whitespace-nowrap font-medium",
   },
   {
     header: "Department",
-    render: (row) => row.employeeRecord?.department ?? "—",
+    render: (row) => row.department ?? "—",
     className: "whitespace-nowrap",
   },
   {
     header: "Position",
-    render: (row) => row.employeeRecord?.position ?? "—",
+    render: (row) => row.position ?? "—",
     className: "whitespace-nowrap",
   },
   {
     header: "CTC",
     render: (row) => {
-    const val = Number(row.employeeRecord?.currentCTC || 0);
-    return val ? val.toLocaleString("en-IN") : "—";
-  },
+      const val = Number(row.currentCTC || 0);
+      return val ? val.toLocaleString("en-IN") : "—";
+    },
     className: "whitespace-nowrap font-medium text-gray-800 dark:text-white",
   },
   {
     header: "Joining Date",
     render: (row) => {
-      const dt = row.employeeRecord?.joinDate;
+      const dt = row.joinDate;
       return (
         <span className="whitespace-nowrap">
           {dt ? new Date(dt).toLocaleDateString() : "—"}
@@ -89,24 +87,16 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
   },
   {
     header: "Status",
-    render: (row) => {
-      const isCreated = row._isEmployeeCreated;
-      return (
-        <span
-          className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${isCreated
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-            }`}
-        >
-          {isCreated ? "Created" : "Not Created"}
-        </span>
-      );
-    },
+    render: () => (
+      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+        Created
+      </span>
+    ),
   },
   {
     header: "Documents",
     render: (row) => {
-      const hasRecord = !!row.employeeRecord?.id;
+      const hasRecord = !!row.id;
       return (
         <button
           onClick={() => onUpload(row)}
@@ -130,39 +120,43 @@ const getColumns = (onUpload: (user: EmployeeUser) => void): ColumnDef<EmployeeU
 // ─── Detail fields for modal ──────────────────────────────────────────────────
 
 const detailFields: DetailField<EmployeeUser>[] = [
-  { label: "First Name", render: (r) => r.firstName },
-  { label: "Last Name", render: (r) => r.lastName },
-  { label: "Email", render: (r) => r.email },
-  { label: "Employee Code", render: (r) => r.employeeRecord?.employeeCode ?? "—" },
-  { label: "Branch ID", render: (r) => r.employeeRecord?.branchId ?? "—" },
-  { label: "Department", render: (r) => r.employeeRecord?.department ?? "—" },
-  { label: "Position", render: (r) => r.employeeRecord?.position ?? "—" },
-{ label: "Monthly Salary", render: (r) => {
-  const val = Number(r.employeeRecord?.monthlySalary || 0);
-  return val ? val.toLocaleString("en-IN") : "—";
-}},
-
-{ label: "Previous CTC", render: (r) => {
-  const val = Number(r.employeeRecord?.previousCTC || 0);
-  return val ? val.toLocaleString("en-IN") : "—";
-} },
-{ label: "Current CTC", render: (r) => {
-  const val = Number(r.employeeRecord?.currentCTC || 0);
-  return val ? val.toLocaleString("en-IN") : "—";
-} },
-  { label: "Leaves Taken", render: (r) => r.employeeRecord?.takenLeave ?? "—" },
-  { label: "Status", render: (r) => r._isEmployeeCreated ? "Created" : "Not Created" },
+  { label: "First Name", render: (r) => r.user?.firstName ?? "—" },
+  { label: "Last Name", render: (r) => r.user?.lastName ?? "—" },
+  { label: "Email", render: (r) => r.user?.email ?? "—" },
+  { label: "Employee Code", render: (r) => r.employeeCode ?? "—" },
+  { label: "Branch ID", render: (r) => r.branchId ?? "—" },
+  { label: "Department", render: (r) => r.department ?? "—" },
+  { label: "Position", render: (r) => r.position ?? "—" },
+  {
+    label: "Monthly Salary", render: (r) => {
+      const val = Number(r.monthlySalary || 0);
+      return val ? val.toLocaleString("en-IN") : "—";
+    }
+  },
+  {
+    label: "Previous CTC", render: (r) => {
+      const val = Number(r.previousCTC || 0);
+      return val ? val.toLocaleString("en-IN") : "—";
+    }
+  },
+  {
+    label: "Current CTC", render: (r) => {
+      const val = Number(r.currentCTC || 0);
+      return val ? val.toLocaleString("en-IN") : "—";
+    }
+  },
+  { label: "Leaves Taken", render: (r) => r.takenLeave ?? "—" },
   {
     label: "Joining Date",
     render: (r) => {
-      const dt = r.employeeRecord?.joinDate;
+      const dt = r.joinDate;
       return dt ? new Date(dt).toLocaleString() : "—";
     },
   },
   {
     label: "Relieving Date",
     render: (r) => {
-      const dt = r.employeeRecord?.relievingDate;
+      const dt = r.relievingDate;
       return dt ? new Date(dt).toLocaleString() : "Still Employed";
     },
   },
@@ -179,18 +173,17 @@ function EditEmployeeModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const empRec = employee.employeeRecord || ({} as Partial<EmployeeRecord>);
-  const [department, setDepartment] = useState(empRec.department || "");
-  const [position, setPosition] = useState(empRec.position || "");
-  const [monthlySalary, setMonthlySalary] = useState<string | number>(empRec.monthlySalary ?? "");
-  const [currentCTC, setCurrentCTC] = useState<string | number>(empRec.currentCTC ?? "");
-  const [joinDate, setJoinDate] = useState(empRec.joinDate || "");
-  const [relievingDate, setRelievingDate] = useState(empRec.relievingDate || "");
-  const [takenLeave, setTakenLeave] = useState<string | number>(empRec.takenLeave ?? 0);
+  const [department, setDepartment] = useState(employee.department || "");
+  const [position, setPosition] = useState(employee.position || "");
+  const [monthlySalary, setMonthlySalary] = useState<string | number>(employee.monthlySalary ?? "");
+  const [currentCTC, setCurrentCTC] = useState<string | number>(employee.currentCTC ?? "");
+  const [joinDate, setJoinDate] = useState(employee.joinDate || "");
+  const [relievingDate, setRelievingDate] = useState(employee.relievingDate || "");
+  const [takenLeave, setTakenLeave] = useState<string | number>(employee.takenLeave ?? 0);
   const [status, setStatus] = useState("Active");
-  const [employeeCode, setEmployeeCode] = useState(empRec.employeeCode || "");
-  const [branchId, setBranchId] = useState<string | number>(empRec.branchId ?? "");
-  const [previousCTC, setPreviousCTC] = useState<string | number>(empRec.previousCTC ?? "");
+  const [employeeCode, setEmployeeCode] = useState(employee.employeeCode || "");
+  const [branchId, setBranchId] = useState<string | number>(employee.branchId ?? "");
+  const [previousCTC, setPreviousCTC] = useState<string | number>(employee.previousCTC ?? "");
 
   const [saving, setSaving] = useState(false);
 
@@ -216,10 +209,10 @@ function EditEmployeeModal({
     try {
       setSaving(true);
       const employeeData: EmployeeRecord = {
-        userId: employee.id,
+        userId: employee.userId,
         department,
         position,
-         monthlySalary: Number(String(monthlySalary).replace(/,/g, "")) || 0,
+        monthlySalary: Number(String(monthlySalary).replace(/,/g, "")) || 0,
         currentCTC: Number(String(currentCTC).replace(/,/g, "")) || 0,
         joinDate,
         relievingDate: relievingDate || undefined,
@@ -229,8 +222,8 @@ function EditEmployeeModal({
         previousCTC: Number(String(previousCTC).replace(/,/g, "")) || 0,
       };
 
-      if (employee._isEmployeeCreated && employee.employeeRecord?.id) {
-        await updateEmployee(employee.employeeRecord.id, employeeData);
+      if (employee.id) {
+        await updateEmployee(employee.id, employeeData);
       } else {
         await createEmployee(employeeData);
       }
@@ -258,7 +251,7 @@ function EditEmployeeModal({
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Updating details for{" "}
               <span className="font-medium text-gray-800 dark:text-white">
-                {employee.firstName} {employee.lastName}
+                {employee.user?.firstName} {employee.user?.lastName}
               </span>
             </p>
           </div>
@@ -275,11 +268,11 @@ function EditEmployeeModal({
         {/* Employee Info (read-only) */}
         <div className="mb-5 flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/60">
           <div className="flex h-10 w-10 overflow-hidden flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-            {employee.firstName?.[0]?.toUpperCase() ?? "E"}
+            {employee.user?.firstName?.[0]?.toUpperCase() ?? "E"}
           </div>
           <div>
-            <p className="font-semibold text-gray-900 dark:text-white">{employee.firstName} {employee.lastName}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{employee.email}</p>
+            <p className="font-semibold text-gray-900 dark:text-white">{employee.user?.firstName} {employee.user?.lastName}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{employee.user?.email}</p>
           </div>
         </div>
 
@@ -378,13 +371,10 @@ function EditEmployeeModal({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function ManageEmployees() {
-  const [activeTab, setActiveTab] = useState<"active" | "inactive">("active");
   const [activeEmployees, setActiveEmployees] = useState<EmployeeUser[]>([]);
-  const [inactiveEmployees, setInactiveEmployees] = useState<EmployeeUser[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [editEmployee, setEditEmployee] = useState<EmployeeUser | null>(null);
   const [uploadEmployee, setUploadEmployee] = useState<EmployeeUser | null>(null);
-  const [docTypes, setDocTypes] = useState<DocType[]>([]);
 
   const navigate = useNavigate();
   const { pageNumber, pageSize, setTotalItems, paginationProps } = usePagination();
@@ -392,36 +382,16 @@ export default function ManageEmployees() {
   const fetchEmployees = async () => {
     try {
       setLoadingEmployees(true);
-      const [userRes, docRes] = await Promise.all([
-        getAllUsers(1, 1000),
-        getAllDocTypes()
-      ]);
-      const res = userRes;
-      setDocTypes((docRes?.data || docRes || []) as DocType[]);
-      const parsedData = res.data as EmployeeUser[];
+      const empData = await getAllEmployees();
 
-      const employeeUsers = parsedData.filter(
-        u => String(u.role).trim() === String(EMPLOYEE_ROLE_ID) || String(u.role).trim().toLowerCase() === "employee"
-      );
+      const employees = (empData || []).map((e: any) => ({
+        ...e,
+        id: e.id, // Ensure id is mapped
+        _isEmployeeCreated: true
+      })) as EmployeeUser[];
 
-      const enrichedEmployees = await Promise.all(
-        employeeUsers.map(async (u) => {
-          const empReq = await getEmployeeByUserId(u.id);
-          return {
-            ...u,
-            employeeRecord: empReq || undefined,
-            _isEmployeeCreated: !!empReq
-          };
-        })
-      );
-
-      const active = enrichedEmployees.filter(e => e._isEmployeeCreated);
-      const inactive = enrichedEmployees.filter(e => !e._isEmployeeCreated);
-
-      setActiveEmployees(active);
-      setInactiveEmployees(inactive);
-
-      setTotalItems(activeTab === "active" ? active.length : inactive.length);
+      setActiveEmployees(employees);
+      setTotalItems(employees.length);
     } catch (err) {
       console.error("Failed to fetch employees", err);
       showError("Failed to load employees.");
@@ -429,15 +399,6 @@ export default function ManageEmployees() {
       setLoadingEmployees(false);
     }
   };
-
-  useEffect(() => {
-    if (pageNumber !== 1) {
-      paginationProps.onPageChange(1);
-    } else {
-      fetchEmployees();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
 
   useEffect(() => {
     fetchEmployees();
@@ -448,18 +409,14 @@ export default function ManageEmployees() {
     try {
       await deleteUser(id);
       showSuccess("Employee deleted successfully.");
-      if (activeTab === "active") {
-        setActiveEmployees((prev) => prev.filter((u) => u.id !== id));
-      } else {
-        setInactiveEmployees((prev) => prev.filter((u) => u.id !== id));
-      }
+      setActiveEmployees((prev) => prev.filter((u) => u.id !== id));
       setTotalItems((prev) => prev - 1);
     } catch (err: any) {
       showError(err?.response?.data?.message || "Failed to delete employee.");
     }
   };
 
-  const tabs: { key: "active" | "inactive"; label: string; icon: JSX.Element }[] = [
+  const tabs = [
     {
       key: "active",
       label: "Active Employees",
@@ -469,15 +426,6 @@ export default function ManageEmployees() {
         </svg>
       ),
     },
-    // {
-    //   key: "inactive",
-    //   label: "Inactive Employees",
-    //   icon: (
-    //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-    //     </svg>
-    //   ),
-    // },
   ];
 
   return (
@@ -494,11 +442,10 @@ export default function ManageEmployees() {
         />
       )}
 
-      {uploadEmployee && uploadEmployee.employeeRecord?.id && (
+      {uploadEmployee && uploadEmployee.id && (
         <UploadDocumentModal
-          employeeId={uploadEmployee.employeeRecord.id}
-          employeeName={`${uploadEmployee.firstName} ${uploadEmployee.lastName}`}
-          docTypes={docTypes}
+          employeeId={uploadEmployee.id}
+          employeeName={`${uploadEmployee.user?.firstName} ${uploadEmployee.user?.lastName}`}
           onClose={() => setUploadEmployee(null)}
           onSuccess={fetchEmployees}
         />
@@ -513,12 +460,7 @@ export default function ManageEmployees() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                    activeTab === tab.key
-                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
+                  className="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 transition-all dark:text-blue-400"
                 >
                   {tab.icon}
                   {tab.label}
@@ -538,44 +480,20 @@ export default function ManageEmployees() {
 
         {/* ── Tab content ── */}
         <div className="p-6">
-          {activeTab === "active" && (
-            <>
-              {loadingEmployees ? (
-                <Spinner size="md" label="Loading employees..." className="py-16" />
-              ) : (
-                <DataTable
-                  data={activeEmployees}
-                  columns={getColumns((u) => setUploadEmployee(u))}
-                  detailFields={detailFields}
-                  onDelete={handleDelete}
-                  onEdit={(row) => setEditEmployee(row)}
-                  searchKeys={["firstName", "lastName", "email"]}
-                  searchPlaceholder="Search active employees..."
-                  title="Active Employees"
-                  pagination={paginationProps}
-                />
-              )}
-            </>
-          )}
-
-          {activeTab === "inactive" && (
-            <>
-              {loadingEmployees ? (
-                <Spinner size="md" label="Loading inactive employees..." className="py-16" />
-              ) : (
-                <DataTable
-                  data={inactiveEmployees}
-                  columns={getColumns((u) => setUploadEmployee(u))}
-                  detailFields={detailFields}
-                  onDelete={handleDelete}
-                  onEdit={(row) => setEditEmployee(row)}
-                  searchKeys={["firstName", "lastName", "email"]}
-                  searchPlaceholder="Search inactive employees..."
-                  title="Inactive Employees (Missing Details)"
-                  pagination={paginationProps}
-                />
-              )}
-            </>
+          {loadingEmployees ? (
+            <Spinner size="md" label="Loading employees..." className="py-16" />
+          ) : (
+            <DataTable
+              data={activeEmployees}
+              columns={getColumns((u) => setUploadEmployee(u))}
+              detailFields={detailFields}
+              onDelete={handleDelete}
+              onEdit={(row) => setEditEmployee(row)}
+              searchKeys={["employeeCode", "department", "position"]}
+              searchPlaceholder="Search active employees..."
+              title="Active Employees"
+              pagination={paginationProps}
+            />
           )}
         </div>
       </div>
