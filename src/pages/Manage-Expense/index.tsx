@@ -29,6 +29,7 @@ export default function ManageExpense() {
   const [partners, setPartners] = useState<(User & { partnerId: number })[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<(Expense & { id: number }) | null>(null);
   const [currentPartnerId, setCurrentPartnerId] = useState<number | null>(null);
 
