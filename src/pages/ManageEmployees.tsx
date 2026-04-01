@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, JSX } from "react";
 import { useNavigate } from "react-router";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
 import Label from "../components/form/Label";
@@ -11,9 +11,10 @@ import Spinner from "../components/ui/spinner/Spinner";
 import { showError, showSuccess } from "../utils/toast";
 import { deleteUser } from "../features/users/userApi";
 import { usePagination } from "../hooks/usePagination";
-import { getAllEmployees, updateEmployee, createEmployee } from "../features/users/employeeApi";
-import { EmployeeRecord } from "../types/apiTypes";
+import { getEmployeeByUserId, createEmployee, updateEmployee } from "../features/users/employeeApi";
+import { EmployeeRecord, DocType, User } from "../types/apiTypes";
 import DatePicker from "../components/form/date-picker";
+import { getAllDocTypes } from "../features/docTypes/docTypeApi";
 import UploadDocumentModal from "../components/employees/UploadDocumentModal";
 
 // ─── Types and Constants ────────────────────────────────────────────────────────
@@ -303,11 +304,11 @@ function EditEmployeeModal({
           </div>
           <div>
             <Label>Current CTC</Label>
-            <Input type="text" value={currentCTC} onChange={(e: any) => handleCTCChange(e.target.value)} />
+            <Input type="text" value={currentCTC} onChange={(e: any) => handleCTCChange(e.target.value)}/>
           </div>
           <div>
             <Label>Monthly Salary</Label>
-            <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
+          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
           <div>
             <DatePicker
               id="edit-joinDate"
