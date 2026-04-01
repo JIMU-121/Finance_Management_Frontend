@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
-import Button from "../../components/ui/button/Button";
 import { showError, showSuccess } from "../../utils/toast";
 import {
   getAllExpenseCategories,
@@ -137,7 +137,6 @@ function CategoryFormModal({
 export default function ManageCategory() {
   const [categories, setCategories] = useState<(ExpenseCategory & { id: number })[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editCategory, setEditCategory] = useState<(ExpenseCategory & { id: number }) | null>(null);
 
   const fetchCategories = async () => {
@@ -182,16 +181,15 @@ export default function ManageCategory() {
               Manage categories used to classify expenses
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 text-sm font-medium shadow-theme-xs"
+          <Link
+            to="/manage-category/add"
+            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-4 py-2.5 text-sm font-medium shadow-theme-xs rounded-lg"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add Category
-          </Button>
+          </Link>
         </div>
 
         <div className="p-6">
@@ -212,12 +210,6 @@ export default function ManageCategory() {
         </div>
       </div>
 
-      {isAddOpen && (
-        <CategoryFormModal
-          onClose={() => setIsAddOpen(false)}
-          onSaved={fetchCategories}
-        />
-      )}
 
       {editCategory && (
         <CategoryFormModal
