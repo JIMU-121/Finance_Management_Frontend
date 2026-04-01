@@ -62,6 +62,11 @@ const navItems: NavItem[] = [
     path: "/manage-expense"
   },
   {
+    icon: <FileText />,
+    name: "Manage Category",
+    path: "/manage-category"
+  },
+  {
     icon: <UserCircleIcon />,
     name: "My Profile",
     path: "/profile",
