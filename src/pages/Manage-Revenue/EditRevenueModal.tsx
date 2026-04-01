@@ -6,7 +6,7 @@ import Label from "../../components/form/Label";
 import Select from "../../components/form/Select";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
-
+import DatePicker from "../../components/form/date-picker.tsx";
 export function EditRevenueModal({
   revenue,
   onClose,
@@ -25,7 +25,19 @@ export function EditRevenueModal({
   const [amount, setAmount] = useState<string>(
     revenue.amount ? revenue.amount.toLocaleString("en-IN") : ""
   );
-  const [date, setDate] = useState<string>(revenue.date.split("T")[0]);
+
+  const [date, setDate] = useState<string>(() => {
+    if (!revenue?.date) return "";
+    const d = new Date(revenue.date);
+    if (isNaN(d.getTime())) return "";
+    
+    // formate as yyyy-mm-dd date input
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }); 
+
   const [revenueFrom, setRevenueFrom] = useState<boolean>(revenue.revenue_From);
   const [notes, setNotes] = useState<string>(revenue.notes || "");
   const [saving, setSaving] = useState(false);
@@ -141,16 +153,23 @@ export function EditRevenueModal({
                 placeholder="e.g. 50,000"
               />
             </div>
-            <div>
-              <Label>
-                Date <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                type="date"
-                value={date}
-                onChange={(e: any) => setDate(e.target.value)}
-              />
-            </div>
+          <div>
+          <DatePicker
+            id="edit-revenue-date"
+            label="Date"
+            placeholder="Select date"
+            defaultDate={date}
+            onChange={(dates) => {
+              if (dates && dates.length > 0) {
+                const d = dates[0];
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                setDate(`${year}-${month}-${day}`);
+              }
+            }}
+          />
+        </div>
             <div className="flex items-center gap-3 pt-6">
               <input
                 type="checkbox"
