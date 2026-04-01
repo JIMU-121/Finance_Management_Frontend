@@ -484,20 +484,32 @@ export default function ManageEmployees() {
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] mt-6">
         {/* ── Tab header ── */}
         <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
-          <div className="flex items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActiveTab(tab.key)}
-                className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
-                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10"
-                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          <div className="flex items-center justify-between">
+            {/* Left - Tabs */}
+            <div className="flex items-center gap-1">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Right - Add Button */}
+            <button
+              onClick={() => setActiveTab("active")}
+              className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
+            >
+              + Add Employee
+            </button>
           </div>
         </div>
 
