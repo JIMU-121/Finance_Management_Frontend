@@ -62,8 +62,11 @@ export function DataTable<T extends { id: number }>({
   const [detailRow, setDetailRow] = useState<T | null>(null);
   const [deleteRow, setDeleteRow] = useState<T | null>(null);
 
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
+
   // ── Filter ──────────────────────────────────────────────────────────────────
-  const filtered = data.filter((row) => {
+  const filtered = sortedData.filter((row) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return searchKeys.some((key) =>

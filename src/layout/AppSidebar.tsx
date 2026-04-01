@@ -61,6 +61,11 @@ const navItems: NavItem[] = [
     name: "Manage Document Type",
     path: "/document-type",
   },
+  {
+    icon: <FileText />,
+    name: "Manage Category",
+    path: "/manage-category",
+  },
 ];
 
 const othersItems: NavItem[] = [

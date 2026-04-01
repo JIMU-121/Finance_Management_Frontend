@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import Button from "../../components/ui/button/Button";
 import { showError, showSuccess } from "../../utils/toast";
 import {
   getAllExpenses,
@@ -15,11 +15,9 @@ import { getAllUsers, User } from "../../features/users/userApi";
 import { getPartnerByUserId } from "../../features/users/partnerApi";
 import { DataTable } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
-import { ModalShell } from "../../components/ui/modal/ModalShell";
 import { useAuth } from "../../context/AuthContext";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-import { AddExpenseForm } from "./AddExpenseForm";
 import { EditExpenseModal } from "./EditExpenseModal";
 import { getExpenseColumns, getExpenseDetailFields } from "./expenseTableConfig";
 
@@ -31,7 +29,6 @@ export default function ManageExpense() {
   const [partners, setPartners] = useState<(User & { partnerId: number })[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<(Expense & { id: number }) | null>(null);
   const [currentPartnerId, setCurrentPartnerId] = useState<number | null>(null);
 
@@ -147,16 +144,15 @@ export default function ManageExpense() {
               Review, approve and manage all expense records
             </p>
           </div>
-          <Button
-            type="button"
-            onClick={() => setIsAddOpen(true)}
-            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 text-sm font-medium shadow-theme-xs self-start sm:self-auto"
+          <Link
+            to="/manage-expense/add"
+            className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 text-sm font-medium shadow-theme-xs self-start sm:self-auto rounded-lg"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
             Add Expense
-          </Button>
+          </Link>
         </div>
 
         {/* Expense table */}
@@ -178,28 +174,6 @@ export default function ManageExpense() {
         </div>
       </div>
 
-      {/* Add Expense Modal */}
-      {isAddOpen && (
-        <ModalShell
-          title="Add Expense"
-          subtitle="Register a new expense into the ledger"
-          onClose={() => setIsAddOpen(false)}
-          maxWidth="2xl"
-          hideFooter
-        >
-          <AddExpenseForm
-            onAdded={() => {
-              setIsAddOpen(false);
-              fetchExpenses();
-            }}
-            assets={assets}
-            refreshAssets={fetchAssets}
-            partners={partners}
-            categories={categories}
-            allExpenses={expenses}
-          />
-        </ModalShell>
-      )}
 
       {/* Edit Expense Modal */}
       {editExpense && (
