@@ -25,6 +25,7 @@ export type DataTableProps<T extends { id: number }> = {
   columns: ColumnDef<T>[];
   detailFields?: DetailField<T>[];
   onDelete?: (id: number) => void;
+  onBulkDelete?: (ids: number[]) => void;
   onEdit?: (row: T) => void;
   searchPlaceholder?: string;
   searchKeys?: (keyof T)[];
@@ -42,13 +43,12 @@ export type DataTableProps<T extends { id: number }> = {
   };
 };
 
-// ─── Main DataTable ───────────────────────────────────────────────────────────
-
 export function DataTable<T extends { id: number }>({
   data,
   columns,
   detailFields,
   onDelete,
+  onBulkDelete,
   onEdit,
   searchPlaceholder = "Search...",
   searchKeys = [],
@@ -61,6 +61,11 @@ export function DataTable<T extends { id: number }>({
   const [search, setSearch] = useState("");
   const [detailRow, setDetailRow] = useState<T | null>(null);
   const [deleteRow, setDeleteRow] = useState<T | null>(null);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isBulkDeleteMode, setIsBulkDeleteMode] = useState(false);
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
 
   // ── Sort ──────────────────────────────────────────────────────────────────
   const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
@@ -76,27 +81,71 @@ export function DataTable<T extends { id: number }>({
     );
   });
 
+  // ── Selection Logic ─────────────────────────────────────────────────────────
+  const handleSelectRow = (id: number) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      const allIds = filtered.map((r) => r.id);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
   const handleConfirmDelete = () => {
-    if (!deleteRow) return;
-    onDelete?.(deleteRow.id);
-    setDeleteRow(null);
+    if (isBulkDeleteMode) {
+      onBulkDelete?.(selectedIds);
+      setSelectedIds([]);
+      setIsBulkDeleteMode(false);
+    } else if (deleteRow) {
+      onDelete?.(deleteRow.id);
+      setDeleteRow(null);
+    }
   };
 
   const showActions = !hideDetails || !hideEdit || !hideDelete;
+  const isAllSelected = filtered.length > 0 && selectedIds.length === filtered.length;
 
   return (
     <>
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         {/* ── Toolbar ── */}
         <div className="flex flex-col gap-3 border-b border-gray-200 px-5 py-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              {title}
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {filtered.length} record{filtered.length !== 1 ? "s" : ""} found
-            </p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                {title}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {filtered.length} record{filtered.length !== 1 ? "s" : ""} found
+              </p>
+            </div>
+            
+            {selectedIds.length > 0 && (
+              <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-700 animate-in fade-in slide-in-from-left-2 duration-200">
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  {selectedIds.length} selected
+                </span>
+                <button
+                  onClick={() => {
+                    setIsBulkDeleteMode(true);
+                  }}
+                  className="flex items-center gap-1.5 rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                >
+                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.136 21H7.864a2 2 0 01-1.997-1.858L5 7m5 4v6m4-6v6M1 7h22M8 7V4a1 1 0 011-1h6a1 1 0 011 1v3" />
+                  </svg>
+                  Delete Selected
+                </button>
+              </div>
+            )}
           </div>
+          
           {/* Search */}
           <div className="relative w-full sm:w-64">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -129,6 +178,14 @@ export function DataTable<T extends { id: number }>({
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+                <th className="w-10 px-5 py-3">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
+                    checked={isAllSelected}
+                    onChange={handleSelectAll}
+                  />
+                </th>
                 <th className="whitespace-nowrap px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   #
                 </th>
@@ -151,7 +208,7 @@ export function DataTable<T extends { id: number }>({
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={columns.length + (showActions ? 2 : 1)}
+                    colSpan={columns.length + (showActions ? 3 : 2)}
                     className="py-12 text-center text-gray-400 dark:text-gray-500"
                   >
                     No records found.
@@ -161,8 +218,17 @@ export function DataTable<T extends { id: number }>({
                 filtered.map((row, idx) => (
                   <tr
                     key={row.id}
-                    className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40"
+                    className={`transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/40 ${selectedIds.includes(row.id) ? "bg-blue-50/50 dark:bg-blue-900/10" : ""}`}
                   >
+                    {/* Checkbox */}
+                    <td className="px-5 py-3.5">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
+                        checked={selectedIds.includes(row.id)}
+                        onChange={() => handleSelectRow(row.id)}
+                      />
+                    </td>
                     {/* Row number */}
                     <td className="whitespace-nowrap px-5 py-3.5 text-gray-400 dark:text-gray-500">
                       {idx + 1}
@@ -176,8 +242,8 @@ export function DataTable<T extends { id: number }>({
                         {col.render
                           ? col.render(row)
                           : col.accessor
-                            ? String(row[col.accessor] ?? "—")
-                            : "—"}
+                             ? String(row[col.accessor] ?? "—")
+                             : "—"}
                       </td>
                     ))}
                     {/* Actions */}
@@ -421,21 +487,29 @@ export function DataTable<T extends { id: number }>({
         />
       )}
       <ConfirmModal
-        isOpen={!!deleteRow}
-        title="Confirm Delete"
+        isOpen={!!deleteRow || isBulkDeleteMode}
+        title={isBulkDeleteMode ? "Confirm Bulk Delete" : "Confirm Delete"}
         subtitle="This action cannot be undone."
         message={
-          deleteRow ? (
+          isBulkDeleteMode ? (
             <>
-              <div>Are you sure you want to delete?</div>
-              <div>Action will permentatly delete the records</div>
+              <div>Are you sure you want to delete <span className="font-bold text-red-600">{selectedIds.length}</span> records?</div>
+              <div className="mt-1 text-sm text-gray-500">Action will permanently delete the selected records.</div>
+            </>
+          ) : deleteRow ? (
+            <>
+              <div>Are you sure you want to delete this record?</div>
+              <div className="mt-1 text-sm text-gray-500">Action will permanently delete the record.</div>
             </>
           ) : undefined
         }
-        confirmLabel="Delete"
+        confirmLabel={isBulkDeleteMode ? `Delete ${selectedIds.length} items` : "Delete"}
         variant="danger"
         onConfirm={handleConfirmDelete}
-        onClose={() => setDeleteRow(null)}
+        onClose={() => {
+          setDeleteRow(null);
+          setIsBulkDeleteMode(false);
+        }}
       />
     </>
   );

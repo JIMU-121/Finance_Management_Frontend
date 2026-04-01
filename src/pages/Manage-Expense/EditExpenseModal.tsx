@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Select from "../../components/form/Select";
@@ -7,9 +7,11 @@ import DatePicker from "../../components/form/date-picker";
 import { IndianAmountInput } from "../../components/form/IndianAmountInput";
 import { showError, showSuccess } from "../../utils/toast";
 import { patchExpense } from "../../features/expenses/expenseApi";
-import { Expense, Asset, ExpenseCategory } from "../../types/apiTypes";
+import { Expense, Asset } from "../../types/apiTypes";
 import { AddAssetForm } from "../Manage-Asset";
-import { User } from "../../features/users/userApi";
+import { getAllPartners } from "../../features/users/partnerApi";
+import { getAllExpenseCategories } from "../../features/expenses/expenseCategoryApi";
+import { getAllAssets } from "../../features/assets/assetApi";
 import { ModalShell } from "../../components/ui/modal/ModalShell";
 import { safeFormatDate, getUniqueAssets } from "./helpers";
 
@@ -17,24 +19,14 @@ interface EditExpenseModalProps {
   expense: Expense & { id: number };
   onClose: () => void;
   onUpdated: () => void;
-  assets: Asset[];
-  refreshAssets: () => Promise<void>;
-  partners: (User & { partnerId: number })[];
-  categories: ExpenseCategory[];
 }
 
 export function EditExpenseModal({
   expense,
   onClose,
   onUpdated,
-  assets,
-  refreshAssets,
-  partners,
-  categories,
 }: EditExpenseModalProps) {
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
-
-  const initDate = `${expense.year}-${String(expense.month).padStart(2, "0")}-01`;
 
   const [description, setDescription] = useState(expense.description || "");
   const [amountRaw, setAmountRaw]     = useState(String(expense.amount || ""));
@@ -43,25 +35,56 @@ export function EditExpenseModal({
   const [categoryId, setCategoryId]   = useState<number | "">(
     expense.categoryId != null ? Number(expense.categoryId) : ""
   );
-  const [selectedDate, setSelectedDate] = useState(initDate);
   const [isRecurring, setIsRecurring] = useState(expense.isRecurring || false);
   const [saving, setSaving]             = useState(false);
   const [errors, setErrors]             = useState<Record<string, string>>({});
 
-  const uniqueAssets = getUniqueAssets(assets);
-  const parsedDate   = new Date(selectedDate || initDate);
-  const editMonth    = parsedDate.getMonth() + 1;
-  const editYear     = parsedDate.getFullYear();
+  const initDate = `${expense.year}-${String(expense.month).padStart(2, "0")}-01`;
+  const [selectedDate, setSelectedDate] = useState(initDate);
+
+  const [categories, setCategories] = useState<{ value: string; label: string }[]>([]);
+  const [partners, setPartners] = useState<{ value: string; label: string }[]>([]);
+  const [assets, setAssets] = useState<{ value: string; label: string }[]>([]);
+
+  const fetchOptions = useCallback(async () => {
+    try {
+      const [catRes, partRes, assetRes] = await Promise.all([
+        getAllExpenseCategories(),
+        getAllPartners(),
+        getAllAssets()
+      ]);
+
+      setCategories(catRes.map(c => ({ value: String(c.id), label: c.categoryName })));
+      setPartners((partRes || []).map(p => ({
+        value: String(p.id),
+        label: `${p.user?.firstName} ${p.user?.lastName}`
+      })));
+
+      const uniqueAssets = getUniqueAssets(assetRes as Asset[]);
+      setAssets([
+        { value: "0", label: "None" },
+        ...uniqueAssets.map(a => ({
+          value: String(a.firstId),
+          label: `${a.name} (${a.count})`,
+        }))
+      ]);
+    } catch (err) {
+      console.error("Failed to fetch options", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOptions();
+  }, [fetchOptions]);
+
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-
     if (!categoryId) newErrors.categoryId = "Category is required.";
     if (!selectedDate) newErrors.date = "Date is required.";
     if (!partnerId) newErrors.partner = "Partner is required.";
     if (!amountRaw || Number(amountRaw) <= 0) newErrors.amount = "Valid amount is required.";
     if (!description.trim()) newErrors.description = "Notes/Description are required.";
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,9 +100,9 @@ export function EditExpenseModal({
         assetId:     Number(assetId) || null,
         partnerId:   Number(partnerId),
         employeeId:  expense.employeeId,
-        categoryId:  typeof categoryId === "number" ? categoryId : null,
-        month:       editMonth,
-        year:        editYear,
+        categoryId:  categoryId ? Number(categoryId) : null,
+        month:       new Date(selectedDate).getMonth() + 1,
+        year:        new Date(selectedDate).getFullYear(),
         isRecurring,
       });
       showSuccess("Expense updated.");
@@ -103,11 +126,8 @@ export function EditExpenseModal({
       saveLabel="Save Changes"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Notes */}
         <div className="md:col-span-2">
-          <Label>
-            Notes <span className="text-red-500">*</span>
-          </Label>
+          <Label>Notes <span className="text-red-500">*</span></Label>
           <Input
             value={description}
             error={!!errors.description}
@@ -120,7 +140,6 @@ export function EditExpenseModal({
           />
         </div>
 
-        {/* Amount */}
         <div>
           <IndianAmountInput
             label="Amount (₹) *"
@@ -134,13 +153,10 @@ export function EditExpenseModal({
           />
         </div>
 
-        {/* Category */}
         <div>
-          <Label>
-            Category <span className="text-red-500">*</span>
-          </Label>
+          <Label>Category <span className="text-red-500">*</span></Label>
           <Select
-            options={categories.map((c) => ({ value: String(c.id), label: c.categoryName }))}
+            options={categories}
             value={String(categoryId)}
             error={!!errors.categoryId}
             hint={errors.categoryId}
@@ -152,7 +168,6 @@ export function EditExpenseModal({
           />
         </div>
 
-        {/* Date */}
         <div className="md:col-span-2">
           <DatePicker
             id={`edit-expense-date-${expense.id}`}
@@ -170,20 +185,14 @@ export function EditExpenseModal({
           />
         </div>
 
-        {/* Asset */}
         <div>
           <Label>Asset (Optional)</Label>
           <div className="flex items-center gap-2">
             <div className="flex-1">
               <Select
-                options={[
-                  { value: "0", label: "None" },
-                  ...uniqueAssets.map((a) => ({
-                    value: String(a.firstId),
-                    label: `${a.name} (${a.count})`,
-                  })),
-                ]}
+                options={assets}
                 value={String(assetId || "0")}
+                placeholder="Select Asset"
                 onChange={(val) => setAssetId(Number(val))}
               />
             </div>
@@ -197,16 +206,10 @@ export function EditExpenseModal({
           </div>
         </div>
 
-        {/* Partner */}
         <div>
-          <Label>
-            Partner <span className="text-red-500">*</span>
-          </Label>
+          <Label>Partner <span className="text-red-500">*</span></Label>
           <Select
-            options={partners.map((p) => ({
-              value: String(p.partnerId),
-              label: `${p.firstName} ${p.lastName}`,
-            }))}
+            options={partners}
             value={String(partnerId)}
             error={!!errors.partner}
             hint={errors.partner}
@@ -218,7 +221,6 @@ export function EditExpenseModal({
           />
         </div>
 
-        {/* Recurring */}
         <div className="flex items-center gap-3 pt-6 md:col-span-2">
           <input
             type="checkbox"
@@ -227,9 +229,7 @@ export function EditExpenseModal({
             onChange={(e) => setIsRecurring(e.target.checked)}
             className="h-5 w-5 rounded border-gray-300 text-brand-500 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800"
           />
-          <Label htmlFor="editIsRecurring" className="!mb-0">
-            Recurring Expense
-          </Label>
+          <Label htmlFor="editIsRecurring" className="!mb-0">Recurring Expense</Label>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ export function EditExpenseModal({
         >
           <AddAssetForm
             onAdded={async (newAssetId?: number) => {
-              await refreshAssets();
+              await fetchOptions(); // Refresh asset list
               if (newAssetId) setAssetId(newAssetId);
               setIsAssetModalOpen(false);
             }}

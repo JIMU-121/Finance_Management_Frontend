@@ -14,29 +14,17 @@ import {
   updateProject,
   Project,
 } from "../../features/projects/projectAPI";
-import { getAllEmployees } from "../../features/users/employeeApi";
-import { getAllUsers } from "../../features/users/userApi";
 import { getAllProfiles } from "../../api/ProfileApi";
 import { RegisterProjectPayload, AssignedEmployee } from "../../types/apiTypes";
 
 function EmployeeAvatars({
-  projectId,
   initialEmployees,
-  employeesMap,
   onManage,
 }: {
-  projectId: number;
   initialEmployees?: AssignedEmployee[];
-  employeesMap: Record<number, string>;
   onManage: () => void;
 }) {
-  const [list, setList] = useState<any[]>(initialEmployees ?? []);
-
-  useEffect(() => {
-    import("../../features/projects/projectAPI").then(({ getProjectEmployees }) => {
-      getProjectEmployees(projectId).then(setList).catch(console.error);
-    });
-  }, [projectId]);
+  const list = (initialEmployees ?? []).filter(e => e.isActive);
 
   const shown = list.slice(0, 3);
   const extra = list.length - shown.length;
@@ -48,12 +36,11 @@ function EmployeeAvatars({
       title="Manage employees"
     >
       <div className="flex -space-x-2">
-        {shown.map((emp: any, i) => {
-          const reliableName = employeesMap[emp.employeeId ?? emp.id];
+        {shown.map((emp, i) => {
           return (
             <InitialAvatar
               key={emp.id ?? emp.employeeId ?? i}
-              name={reliableName || "Employee"}
+              name={emp.employeeName || "Employee"}
               index={i}
             />
           );
@@ -353,24 +340,7 @@ export default function ViewProjectTable() {
   const [loading, setLoading] = useState(false);
   const [editProject, setEditProject] = useState<Project | null>(null);
   const [assignProject, setAssignProject] = useState<Project | null>(null);
-  const [employeesMap, setEmployeesMap] = useState<Record<number, string>>({});
 
-  useEffect(() => {
-    Promise.all([getAllEmployees(), getAllUsers(1, 1000)]).then(([emps, usersRes]) => {
-      const users = usersRes.data;
-      const map: Record<number, string> = {};
-      emps.forEach(emp => {
-        const user = users.find(u => u.id === emp.userId);
-        if (user) {
-          const name = [user.firstName, user.lastName].filter(n => n && n !== "null").join(" ");
-          map[emp.id!] = name || `Employee #${emp.id}`;
-        } else {
-          map[emp.id!] = `Employee #${emp.id}`;
-        }
-      });
-      setEmployeesMap(map);
-    }).catch(console.error);
-  }, []);
 
   const fetchProjects = async () => {
     try {
@@ -463,9 +433,7 @@ export default function ViewProjectTable() {
     header: "Employees",
     render: (row) => (
       <EmployeeAvatars
-        projectId={row.id}
         initialEmployees={row.employees}
-        employeesMap={employeesMap}
         onManage={() => setAssignProject(row)}
       />
     ),
@@ -475,6 +443,17 @@ export default function ViewProjectTable() {
     render: (row) => <StatusBadge status={row.status} />,
   },
 ];
+
+  const handleBulkDelete = async (ids: number[]) => {
+    try {
+      await Promise.all(ids.map((id) => deleteProject(id)));
+      showSuccess(`${ids.length} projects deleted successfully.`);
+      fetchProjects();
+    } catch (err: any) {
+      showError("Some deletions failed. Refreshing list...");
+      fetchProjects();
+    }
+  };
 
   return (
     <>
@@ -486,6 +465,7 @@ export default function ViewProjectTable() {
           columns={columns}
           detailFields={detailFields}
           onDelete={(id) => handleDelete(id as number)}
+          onBulkDelete={handleBulkDelete}
           onEdit={(row) => setEditProject(row)}
           searchKeys={["name", "clientName", "managerName", "technologyStack"]}
           searchPlaceholder="Search projects..."

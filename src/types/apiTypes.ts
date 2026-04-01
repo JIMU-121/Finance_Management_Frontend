@@ -104,6 +104,7 @@ export interface Partner {
   sharePercentage: number;
   branchId?: number;
   isMainPartner: boolean;
+  user?: User;
 }
 
 // Employee Models
@@ -120,15 +121,21 @@ export interface EmployeeRecord {
   joinDate: string;
   relievingDate?: string | null;
   takenLeave?: number;
+  user?: User;
 }
 
 // Project Models
 export interface AssignedEmployee {
   id: number;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  employeeCode?: string;
+  projectId: number;
+  employeeId: number;
+  employeeName: string;
+  role: string;
+  hourlyRate: number;
+  assignedDate: string;
+  unassignedDate?: string | null;
+  isActive: boolean;
+  isBench: boolean;
 }
 
 export interface Project {
@@ -211,8 +218,15 @@ export interface Expense {
   year: number;
   isRecurring: boolean;
   status?: number;
-  approvedBy?: number;
+  approvedBy?: number | string;
   approvedDate?: string;
+  employeeName?: string | null;
+  partnerName?: string | null;
+  assetName?: string | null;
+  approvedByName?: string | null;
+  isApproved?: boolean;
+  expenseDate?: string;
+  categoryName?: string | null;
 }
 
 export interface RegisterExpensePayload {
@@ -231,7 +245,9 @@ export interface RegisterExpensePayload {
 export interface Revenue {
   id: number;
   partnerId: number;
+  partnerName?: string;
   projectId: number | null;
+  projectName?: string;
   amount: number;
   date: string;
   revenue_From: boolean;
