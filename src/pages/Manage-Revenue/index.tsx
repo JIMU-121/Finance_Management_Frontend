@@ -7,29 +7,18 @@ import {
   getAllRevenues,
   deleteRevenue,
 } from "../../features/revenue/revenueApi";
-import { Revenue, Project, User, Partner } from "../../types/apiTypes";
-import { getAllProjects } from "../../features/projects/projectAPI";
-import { getAllUsers } from "../../features/users/userApi";
-import { getAllPartners } from "../../features/users/partnerApi";
+import { Revenue } from "../../types/apiTypes";
 import { DataTable, DetailField } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
 import { AddRevenueForm } from "./AddRevenueForm";
 import { EditRevenueModal } from "./EditRevenueModal";
 import { getRevenueColumns } from "./getRevenueColumns";
 
-const getRevenueDetailFields = (
-  projects: Project[],
-  partners: (Partner & { firstName: string; lastName: string })[],
-): DetailField<Revenue>[] => [
+const getRevenueDetailFields = (): DetailField<Revenue>[] => [
   { label: "Revenue ID", render: (r) => r.id },
   {
     label: "Partner",
-    render: (r) => {
-      const partner = partners.find((p) => p.id === r.partnerId);
-      return partner
-        ? `${partner.firstName} ${partner.lastName}`
-        : `ID: ${r.partnerId}`;
-    },
+    render: (r) => r.partnerName || `ID: ${r.partnerId}`,
   },
   {
     label: "Project",
@@ -43,8 +32,7 @@ const getRevenueDetailFields = (
       ) {
         return "N/A";
       }
-      const project = projects.find((p) => p.id === pId);
-      return project ? project.name : `ID: ${r.projectId}`;
+      return r.projectName || `ID: ${pId}`;
     },
   },
   { label: "Amount", render: (r) => `₹${r.amount.toLocaleString("en-IN")}` },
@@ -56,29 +44,18 @@ const getRevenueDetailFields = (
   { label: "Notes", render: (r) => r.notes || "None" },
 ];
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function ManageRevenue() {
   const [activeTab, setActiveTab] = useState<"view" | "add">("view");
   const [revenues, setRevenues] = useState<Revenue[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [partners, setPartners] = useState<
-    (Partner & { firstName: string; lastName: string })[]
-  >([]);
   const [loading, setLoading] = useState(false);
   const [editRevenue, setEditRevenue] = useState<Revenue | null>(null);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [revRes, projRes, userRes, partnerRes] = await Promise.all([
-        getAllRevenues(),
-        getAllProjects(),
-        getAllUsers(1, 1000),
-        getAllPartners(),
-      ]);
-
+      const revRes = await getAllRevenues();
       const revData = ((revRes as any).data || revRes) as Revenue[];
+      
       const sanitizedRevenues = revData.map((r: Revenue) => ({
         ...r,
         projectId:
@@ -90,24 +67,9 @@ export default function ManageRevenue() {
             : Number(r.projectId),
       }));
       setRevenues(sanitizedRevenues);
-      setProjects((projRes as any).data || projRes);
-
-      const allUsers = (userRes as any).data || userRes;
-      const allPartners = (partnerRes as any).data || partnerRes;
-
-      // Map partners to include user names
-      const mappedPartners = allPartners.map((p: Partner) => {
-        const user = allUsers.find((u: User) => u.id === p.userId);
-        return {
-          ...p,
-          firstName: user?.firstName || "Unknown",
-          lastName: user?.lastName || "Unknown",
-        };
-      });
-      setPartners(mappedPartners);
     } catch (err) {
-      console.error("Failed to fetch data", err);
-      showError("Failed to load data.");
+      console.error("Failed to fetch revenues", err);
+      showError("Failed to load revenues.");
     } finally {
       setLoading(false);
     }
@@ -127,31 +89,16 @@ export default function ManageRevenue() {
     }
   };
 
-  const tabs = [
-    {
-      key: "view",
-      label: "View Revenue",
-      icon: (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 10h16M4 14h16M4 18h16"
-          />
-        </svg>
-      ),
-    },
-  ];
-
-  function handleAddClick() {
-    setActiveTab("add");
-  }
+  const handleBulkDelete = async (ids: number[]) => {
+    try {
+      await Promise.all(ids.map((id) => deleteRevenue(id)));
+      showSuccess(`${ids.length} records deleted successfully.`);
+      fetchData();
+    } catch (err: any) {
+      showError("Some deletions failed. Refreshing list...");
+      fetchData();
+    }
+  };
 
   return (
     <div>
@@ -161,48 +108,36 @@ export default function ManageRevenue() {
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
         <div className="flex justify-between border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
           <div className="flex items-center gap-1">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  if (tab.key !== "add") {
-                    setActiveTab(tab.key as any);
-                  }
-                }}
-                disabled={tab.key === "add"}
-                className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                  activeTab === tab.key
-                    ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                    : "text-gray-500 dark:text-gray-400"
-                } ${tab.key === "add" ? "opacity-50 cursor-not-allowed" : "hover:text-gray-700 dark:hover:text-gray-200"}`}
-              >
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
+            <button
+              onClick={() => setActiveTab("view")}
+              className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                activeTab === "view"
+                  ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              View Revenue
+            </button>
           </div>
-          <Button onClick={handleAddClick} className="m-2">
-            {/* {" "} */}+ Add Revenue
+          <Button onClick={() => setActiveTab("add")} className="m-2">
+            + Add Revenue
           </Button>
         </div>
 
         <div className="p-6">
           {activeTab === "view" ? (
             loading ? (
-              <Spinner
-                size="md"
-                label="Loading revenue records..."
-                className="py-16"
-              />
+              <Spinner size="md" label="Loading revenue records..." className="py-16" />
             ) : (
               <DataTable
                 data={revenues}
-                columns={getRevenueColumns(projects, partners)}
-                detailFields={getRevenueDetailFields(projects, partners)}
+                columns={getRevenueColumns()}
+                detailFields={getRevenueDetailFields()}
                 title="Revenue Records"
-                searchKeys={["notes"]}
-                searchPlaceholder="Search by notes..."
+                searchKeys={["notes", "partnerName", "projectName"]}
+                searchPlaceholder="Search notes, partners or projects..."
                 onDelete={(id) => handleDelete(id as number)}
+                onBulkDelete={handleBulkDelete}
                 onEdit={(row) => setEditRevenue(row)}
               />
             )
@@ -213,8 +148,6 @@ export default function ManageRevenue() {
                   fetchData();
                   setActiveTab("view");
                 }}
-                projects={projects}
-                partners={partners}
               />
             </div>
           )}
@@ -226,8 +159,6 @@ export default function ManageRevenue() {
           revenue={editRevenue}
           onClose={() => setEditRevenue(null)}
           onUpdated={fetchData}
-          projects={projects}
-          partners={partners}
         />
       )}
     </div>

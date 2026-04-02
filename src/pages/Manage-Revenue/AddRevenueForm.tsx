@@ -1,22 +1,20 @@
-import { useState } from "react";
-import { Partner, Project } from "../../types/apiTypes";
+import { useState, useCallback } from "react";
 import { showError, showSuccess } from "../../utils/toast";
 import { createRevenue } from "../../features/revenue/revenueApi";
+import { getAllPartners } from "../../features/users/partnerApi";
+import { getAllProjects } from "../../features/projects/projectAPI";
 import Label from "../../components/form/Label";
+import LazySelect from "../../components/form/LazySelect";
 import Select from "../../components/form/Select";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 
 export function AddRevenueForm({
   onAdded,
-  projects,
-  partners,
 }: {
   onAdded: () => void;
-  projects: Project[];
-  partners: (Partner & { firstName: string; lastName: string })[];
 }) {
-  const [partnerId, setPartnerId] = useState<number>(partners[0]?.id || 0);
+  const [partnerId, setPartnerId] = useState<number>(0);
   const [projectId, setProjectId] = useState<number | null>(null);
   const [amount, setAmount] = useState<string>("");
   const [date, setDate] = useState<string>(
@@ -25,6 +23,26 @@ export function AddRevenueForm({
   const [revenueFrom, setRevenueFrom] = useState<boolean>(true);
   const [notes, setNotes] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+
+  const loadPartners = useCallback(async () => {
+    const res = await getAllPartners();
+    return (res || []).map((p: any) => ({
+      value: String(p.id),
+      label: `${p.user?.firstName} ${p.user?.lastName}`
+    }));
+  }, []);
+
+  const loadProjects = useCallback(async () => {
+    const res = await getAllProjects();
+    const projects = (res as any).data || res || [];
+    return [
+      { value: "0", label: "None" },
+      ...projects.map((p: any) => ({
+        value: String(p.id),
+        label: p.name,
+      }))
+    ];
+  }, []);
 
   const handleAmountChange = (e: any) => {
     let value = e.target.value;
@@ -76,27 +94,20 @@ export function AddRevenueForm({
             <Label>
               Partner <span className="text-red-500">*</span>
             </Label>
-            <Select
-              options={partners.map((p) => ({
-                value: String(p.id),
-                label: `${p.firstName} ${p.lastName}`,
-              }))}
-              value={String(partnerId)}
+            <LazySelect
+              loadOptions={loadPartners}
+              value={String(partnerId || "")}
               onChange={(val) => setPartnerId(Number(val))}
+              placeholder="Select Partner"
             />
           </div>
           <div>
             <Label>Project</Label>
-            <Select
-              options={[
-                { value: "0", label: "None" },
-                ...projects.map((p) => ({
-                  value: String(p.id),
-                  label: p.name,
-                })),
-              ]}
+            <LazySelect
+              loadOptions={loadProjects}
               value={String(projectId || "0")}
               onChange={(val) => setProjectId(val === "0" ? null : Number(val))}
+              placeholder="Select Project"
             />
           </div>
           <div>

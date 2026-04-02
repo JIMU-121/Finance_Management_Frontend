@@ -1,4 +1,4 @@
-import { useState, useEffect, JSX } from "react";
+import { useState, useEffect } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
@@ -6,7 +6,7 @@ import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
 import { showError, showSuccess } from "../../utils/toast";
-import { getAllUsers, deleteUser, User } from "../../features/users/userApi";
+import { deleteUser } from "../../features/users/userApi";
 import {
   DataTable,
   ColumnDef,
@@ -15,7 +15,7 @@ import {
 import Spinner from "../../components/ui/spinner/Spinner";
 import { usePagination } from "../../hooks/usePagination";
 import {
-  getPartnerByUserId,
+  getAllPartners,
   createPartner,
   updatePartner,
 } from "../../features/users/partnerApi";
@@ -24,14 +24,10 @@ import { useNavigate } from "react-router";
 
 // ─── Types and Constants ──────────────────────────────────────────────────────
 
-type PartnerUser = User & {
-  id: number;
-  partnerRecord?: Partner;
+type PartnerUser = Partner & {
+  id: number; // Required for DataTable
   _isPartnerCreated?: boolean;
 };
-
-// The backend role ID for Partner is "2"
-const PARTNER_ROLE_ID = 2;
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
 
@@ -41,12 +37,12 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     render: (row) => (
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
-          {row.firstName?.[0]?.toUpperCase() ?? "P"}
-          {row.lastName?.[0]?.toUpperCase() ?? ""}
+          {row.user?.firstName?.[0]?.toUpperCase() ?? "P"}
+          {row.user?.lastName?.[0]?.toUpperCase() ?? ""}
         </div>
         <div>
           <span className="block font-semibold text-gray-900 dark:text-white">
-            {row.firstName} {row.lastName}
+            {row.user?.firstName} {row.user?.lastName}
           </span>
           {row.isMainPartner && (
             <span className="text-[10px] uppercase font-bold text-brand-500">Main Partner</span>
@@ -59,7 +55,7 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Email",
     render: (row) => (
       <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {row.email}
+        {row.user?.email}
       </span>
     ),
   },
@@ -67,7 +63,7 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Partnership Type",
     render: (row) => (
       <span className="whitespace-nowrap text-gray-600 dark:text-gray-300 capitalize">
-        {row.partnerRecord?.partnershipType || row.partnershipType || "—"}
+        {row.partnershipType || "—"}
       </span>
     ),
   },
@@ -75,7 +71,7 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Share (%)",
     render: (row) => (
       <span className="whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
-        {row.partnerRecord?.sharePercentage ?? row.sharePercentage ? `${row.partnerRecord?.sharePercentage ?? row.sharePercentage}%` : "—"}
+        {row.sharePercentage ? `${row.sharePercentage}%` : "—"}
       </span>
     ),
   },
@@ -83,35 +79,45 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     header: "Branch",
     render: (row) => (
       <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {row.partnerRecord?.branchId ?? row.branchId ? `Branch #${row.partnerRecord?.branchId ?? row.branchId}` : "—"}
+        {row.branchId ? `Branch #${row.branchId}` : "—"}
       </span>
     ),
   },
   {
     header: "Status",
-    render: (row) => (
+    render: () => (
       <span
-        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${row._isPartnerCreated
-          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-          : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-          }`}
+        className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
       >
-        {row._isPartnerCreated ? "Created" : "Not Created"}
+        Created
       </span>
     ),
   },
 ];
 
 const partnerDetailFields: DetailField<PartnerUser>[] = [
-  { label: "First Name", render: (r) => r.firstName },
-  { label: "Last Name", render: (r) => r.lastName },
-  { label: "Email", render: (r) => r.email },
-  { label: "Partnership Type", render: (r) => r.partnerRecord?.partnershipType || r.partnershipType || "—" },
-  { label: "Share Percentage", render: (r) => (r.partnerRecord?.sharePercentage ?? r.sharePercentage) ? `${r.partnerRecord?.sharePercentage ?? r.sharePercentage}%` : "—" },
-  { label: "Branch ID", render: (r) => (r.partnerRecord?.branchId ?? r.branchId) || "—" },
-  { label: "Is Main Partner", render: (r) => (r.partnerRecord?.isMainPartner ?? r.isMainPartner) ? "Yes" : "No" },
-  { label: "Status", render: (r) => r._isPartnerCreated ? "Created" : "Not Created" },
-  { label: "User ID", render: (r) => r.id },
+  { label: "First Name", render: (r) => r.user?.firstName ?? "—" },
+  { label: "Last Name", render: (r) => r.user?.lastName ?? "—" },
+  { label: "Email", render: (r) => r.user?.email ?? "—" },
+  {
+    label: "Partnership Type",
+    render: (r) => r.partnershipType || "—",
+  },
+  {
+    label: "Share Percentage",
+    render: (r) =>
+      r.sharePercentage ? `${r.sharePercentage}%` : "—",
+  },
+  {
+    label: "Branch ID",
+    render: (r) => r.branchId || "—",
+  },
+  {
+    label: "Is Main Partner",
+    render: (r) =>
+      r.isMainPartner ? "Yes" : "No",
+  },
+  { label: "User ID", render: (r) => r.userId },
 ];
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
@@ -125,17 +131,25 @@ function EditPartnerModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const [firstName, setFirstName] = useState(partner.firstName || "");
-  const [lastName, setLastName] = useState(partner.lastName || "");
-  const [email, setEmail] = useState(partner.email || "");
+  const [firstName, setFirstName] = useState(partner.user?.firstName || "");
+  const [lastName, setLastName] = useState(partner.user?.lastName || "");
+  const [email, setEmail] = useState(partner.user?.email || "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   // Partner fields
-  const [partnershipType, setPartnershipType] = useState(partner.partnerRecord?.partnershipType || partner.partnershipType || "");
-  const [sharePercentage, setSharePercentage] = useState<number | string>((partner.partnerRecord?.sharePercentage ?? partner.sharePercentage) || "");
-  const [branchId, setBranchId] = useState<number | string>((partner.partnerRecord?.branchId ?? partner.branchId) || "");
-  const [isMainPartner, setIsMainPartner] = useState((partner.partnerRecord?.isMainPartner ?? partner.isMainPartner) || false);
+  const [partnershipType, setPartnershipType] = useState(
+    partner.partnershipType || "",
+  );
+  const [sharePercentage, setSharePercentage] = useState<number | string>(
+    partner.sharePercentage || "",
+  );
+  const [branchId, setBranchId] = useState<number | string>(
+    partner.branchId || "",
+  );
+  const [isMainPartner, setIsMainPartner] = useState(
+    partner.isMainPartner || false,
+  );
 
   const [saving, setSaving] = useState(false);
 
@@ -147,17 +161,16 @@ function EditPartnerModal({
     try {
       setSaving(true);
 
-      // We only update the Partner details as requested
       const partnerData: Partner = {
-        userId: partner.id,
+        userId: partner.userId,
         partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
         branchId: branchId ? Number(branchId) : 1,
         isMainPartner
       };
 
-      if (partner._isPartnerCreated && partner.partnerRecord?.id) {
-        await updatePartner(partner.partnerRecord.id, partnerData);
+      if (partner.id) {
+        await updatePartner(partner.id, partnerData);
       } else {
         await createPartner(partnerData);
       }
@@ -184,7 +197,7 @@ function EditPartnerModal({
           <div>
             <h2 className="text-base font-bold text-gray-900 dark:text-white">Edit Partner</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Updating: {partner.firstName} {partner.lastName}
+              Updating: {partner.user?.firstName} {partner.user?.lastName}
             </p>
           </div>
           <button
@@ -281,9 +294,9 @@ function EditPartnerModal({
 }
 
 export default function ManagePartners() {
-  const [activeTab, setActiveTab] = useState<"registered" | "inactive">("registered");
-  const [registeredPartners, setRegisteredPartners] = useState<PartnerUser[]>([]);
-  const [inactivePartners, setInactivePartners] = useState<PartnerUser[]>([]);
+  const [registeredPartners, setRegisteredPartners] = useState<PartnerUser[]>(
+    [],
+  );
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
   const navigate = useNavigate();
@@ -295,40 +308,15 @@ export default function ManagePartners() {
   const fetchPartners = async () => {
     try {
       setLoadingPartners(true);
-      // Fetch all users - we need to fetch a large number because we are filtering down to partners on the client
-      // Without this, partners on page 2 (if page size is 10) won't show up.
-      // Alternatively, the backend should expose an endpoint like `/api/user?role=Partner`
-      const res = await getAllUsers(1, 1000);
+      const data = await getAllPartners();
 
-      const parsedData = res.data as PartnerUser[];
+      const partners = (data || []).map((p: any) => ({
+        ...p,
+        _isPartnerCreated: true,
+      })) as PartnerUser[];
 
-      // Filter the data to ONLY include users who have the partner role (2 or "Partner")
-      // Ensure we trim any whitespace to be safe
-      const partnerUsers = parsedData.filter(
-        u => String(u.role).trim() === String(PARTNER_ROLE_ID) || String(u.role).trim().toLowerCase() === "partner"
-      );
-
-      // Fetch partner details for each user
-      const enrichedPartners = await Promise.all(
-        partnerUsers.map(async (u) => {
-          const partnerReq = await getPartnerByUserId(u.id);
-          return {
-            ...u,
-            partnerRecord: partnerReq || undefined,
-            _isPartnerCreated: !!partnerReq
-          };
-        })
-      );
-
-      const registered = enrichedPartners.filter(p => p._isPartnerCreated);
-      const inactive = enrichedPartners.filter(p => !p._isPartnerCreated);
-
-      setRegisteredPartners(registered);
-      setInactivePartners(inactive);
-
-      // If server pagination is needed, we technically have to update how pagination works here 
-      // when splitting into two tabs, but we'll reflect the count of the active tab.
-      setTotalItems(activeTab === "registered" ? registered.length : inactive.length);
+      setRegisteredPartners(partners);
+      setTotalItems(partners.length);
     } catch (err) {
       console.error("Failed to fetch partners", err);
       showError("Failed to load partners.");
@@ -336,16 +324,6 @@ export default function ManagePartners() {
       setLoadingPartners(false);
     }
   };
-
-  useEffect(() => {
-    // Reset page to 1 when tab changes to ensure we see the first page of results
-    if (pageNumber !== 1) {
-      paginationProps.onPageChange(1);
-    } else {
-      fetchPartners();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
 
   useEffect(() => {
     fetchPartners();
@@ -357,12 +335,7 @@ export default function ManagePartners() {
     try {
       await deleteUser(id);
       showSuccess("Partner deleted successfully.");
-
-      if (activeTab === "registered") {
-        setRegisteredPartners((prev) => prev.filter((u) => u.id !== id));
-      } else {
-        setInactivePartners((prev) => prev.filter((u) => u.id !== id));
-      }
+      setRegisteredPartners((prev) => prev.filter((u) => u.id !== id));
       setTotalItems((prev) => prev - 1);
     } catch (err: any) {
       showError(err?.response?.data?.message || "Failed to delete partner.");
@@ -370,11 +343,7 @@ export default function ManagePartners() {
   };
 
   // ── Tab switch ───────────────────────────────────────────────────────────────
-  const tabs: {
-    key: "registered" | "inactive";
-    label: string;
-    icon: JSX.Element;
-  }[] = [
+  const tabs = [
       {
         key: "registered",
         label: "Registered Partners",
@@ -394,19 +363,9 @@ export default function ManagePartners() {
           </svg>
         ),
       },
-      // {
-      //   key: "inactive",
-      //   label: "Inactive Partners",
-      //   icon: (
-      //     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-      //     </svg>
-      //   ),
-      // },
     ];
 
   function handleRegisterUser() {
-    // setActiveTab("registered");
     navigate("/manage-partner/register");
   }
 
@@ -424,11 +383,7 @@ export default function ManagePartners() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${activeTab === tab.key
-                    ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
+                  className="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 transition-all dark:text-blue-400"
                 >
                   {tab.icon}
                   {tab.label}
@@ -448,46 +403,26 @@ export default function ManagePartners() {
 
         {/* ── Tab content ── */}
         <div className="p-6">
-          {/* ── Registered Partners Table ── */}
-          {activeTab === "registered" && (
-            <>
-              {loadingPartners ? (
-                <Spinner size="md" label="Loading partners..." className="py-16" />
-              ) : (
-                <DataTable
-                  data={registeredPartners}
-                  columns={partnerColumns}
-                  detailFields={partnerDetailFields}
-                  onDelete={handleDelete}
-                  onEdit={(row) => setEditPartner(row)}
-                  searchKeys={["firstName", "lastName", "email", "partnershipType", "branchId"]}
-                  searchPlaceholder="Search registered partners..."
-                  title="Registered Firm Partners"
-                  pagination={paginationProps}
-                />
-              )}
-            </>
-          )}
-
-          {/* ── Inactive Partners Table ── */}
-          {activeTab === "inactive" && (
-            <>
-              {loadingPartners ? (
-                <Spinner size="md" label="Loading inactive partners..." className="py-16" />
-              ) : (
-                <DataTable
-                  data={inactivePartners}
-                  columns={partnerColumns}
-                  detailFields={partnerDetailFields}
-                  onDelete={handleDelete}
-                  onEdit={(row) => setEditPartner(row)}
-                  searchKeys={["firstName", "lastName", "email"]}
-                  searchPlaceholder="Search inactive partners..."
-                  title="Inactive Partners (Missing Partner Details)"
-                  pagination={paginationProps}
-                />
-              )}
-            </>
+          {loadingPartners ? (
+            <Spinner
+              size="md"
+              label="Loading partners..."
+              className="py-16"
+            />
+          ) : (
+            <DataTable
+              data={registeredPartners}
+              columns={partnerColumns}
+              detailFields={partnerDetailFields}
+              onDelete={handleDelete}
+              onEdit={(row) => setEditPartner(row)}
+              searchKeys={[
+                "partnershipType",
+              ]}
+              searchPlaceholder="Search registered partners..."
+              title="Registered Firm Partners"
+              pagination={paginationProps}
+            />
           )}
         </div>
       </div>
