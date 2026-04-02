@@ -18,7 +18,7 @@ import {
   DetailField,
 } from "../components/ui/table/DataTable";
 import Spinner from "../components/ui/spinner/Spinner";
-import { PageTabs, PageTab } from "../components/ui/tabs/PageTabs";
+import { PageTab } from "../components/ui/tabs/PageTabs";
 import { ModalShell } from "../components/ui/modal/ModalShell";
 
 // ─── DataTable config ─────────────────────────────────────────────────────────

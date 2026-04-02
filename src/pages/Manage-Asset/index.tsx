@@ -257,13 +257,7 @@ export function AddAssetForm({
   const [purchaseDate, setPurchaseDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const handleAmountChange = (e: any) => {
-    let value = e.target.value;
-    value = value.replace(/,/g, "");
-    if (!/^\d*$/.test(value)) return;
-    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
-    setAmount(formatted);
-  };
+
 
   const clearInput = () => {
     setName("");
@@ -424,6 +418,17 @@ export default function ManageAsset() {
     }
   };
 
+  const handleBulkDelete = async (ids: number[]) => {
+    try {
+      await Promise.all(ids.map((id) => deleteAsset(id)));
+      showSuccess(`${ids.length} assets deleted successfully.`);
+      fetchAssets();
+    } catch (err: any) {
+      showError("Some deletions failed. Refreshing list...");
+      fetchAssets();
+    }
+  };
+
   const tabs: { key: "add" | "view"; label: string; icon: JSX.Element }[] = [
     {
       key: "view",
@@ -444,25 +449,6 @@ export default function ManageAsset() {
         </svg>
       ),
     },
-    // {
-    //   key: "add",
-    //   label: "Add Asset",
-    //   icon: (
-    //     <svg
-    //       className="h-4 w-4"
-    //       fill="none"
-    //       stroke="currentColor"
-    //       viewBox="0 0 24 24"
-    //     >
-    //       <path
-    //         strokeLinecap="round"
-    //         strokeLinejoin="round"
-    //         strokeWidth={2}
-    //         d="M12 4v16m8-8H4"
-    //       />
-    //     </svg>
-    //   ),
-    // },
   ];
 
   return (
@@ -522,6 +508,7 @@ export default function ManageAsset() {
                   columns={assetColumns}
                   detailFields={assetDetailFields}
                   onDelete={(id) => handleDelete(id as number)}
+                  onBulkDelete={handleBulkDelete}
                   onEdit={(row) => setEditAsset(row)}
                   searchKeys={["name", "description"]}
                   searchPlaceholder="Search by name or description..."

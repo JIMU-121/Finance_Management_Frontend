@@ -8,10 +8,7 @@ import {
   deleteExpense,
   approveExpense,
 } from "../../features/expenses/expenseApi";
-import { getAllExpenseCategories } from "../../features/expenses/expenseCategoryApi";
-import { Expense, Asset, ExpenseCategory } from "../../types/apiTypes";
-import { getAllAssets } from "../../features/assets/assetApi";
-import { getAllUsers, User } from "../../features/users/userApi";
+import { Expense } from "../../types/apiTypes";
 import { getPartnerByUserId } from "../../features/users/partnerApi";
 import { DataTable } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
@@ -25,9 +22,6 @@ import { getExpenseColumns, getExpenseDetailFields } from "./expenseTableConfig"
 
 export default function ManageExpense() {
   const [expenses, setExpenses] = useState<(Expense & { id: number })[]>([]);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [partners, setPartners] = useState<(User & { partnerId: number })[]>([]);
-  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<(Expense & { id: number }) | null>(null);
@@ -36,49 +30,6 @@ export default function ManageExpense() {
   const { user, role } = useAuth();
 
   // ── Data fetchers ──────────────────────────────────────────────────────────
-
-  const fetchAssets = async () => {
-    try {
-      const res = await getAllAssets();
-      setAssets(res as Asset[]);
-    } catch {
-      console.error("Failed to fetch assets");
-    }
-  };
-
-  const fetchPartners = async () => {
-    try {
-      const res = await getAllUsers(1, 1000);
-      const partnerUsers = (res.data as User[]).filter(
-        (u) =>
-          String(u.role).trim() === "2" ||
-          String(u.role).trim().toLowerCase() === "partner"
-      );
-      const active: (User & { partnerId: number })[] = [];
-      for (const u of partnerUsers) {
-        const rec = await getPartnerByUserId(u.id);
-        if (rec?.id) active.push({ ...u, partnerId: rec.id });
-      }
-      setPartners(active);
-
-      // Resolve the current user's partner ID
-      if (user?.id) {
-        const myRec = await getPartnerByUserId(Number(user.id));
-        setCurrentPartnerId(myRec?.id ?? null);
-      }
-    } catch {
-      console.error("Failed to fetch partners");
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const data = await getAllExpenseCategories();
-      setCategories(data);
-    } catch {
-      console.error("Failed to fetch categories");
-    }
-  };
 
   const fetchExpenses = async () => {
     try {
@@ -93,12 +44,23 @@ export default function ManageExpense() {
     }
   };
 
+  const resolveCurrentPartnerId = async () => {
+    if (!user?.id) return;
+    const roleStr = String(role || "").trim().toLowerCase();
+    if (roleStr === "2" || roleStr === "partner") {
+      try {
+        const partner = await getPartnerByUserId(Number(user.id));
+        if (partner?.id) setCurrentPartnerId(partner.id);
+      } catch {
+        console.error("Failed to resolve partner ID");
+      }
+    }
+  };
+
   useEffect(() => {
     fetchExpenses();
-    fetchAssets();
-    fetchPartners();
-    fetchCategories();
-  }, []);
+    resolveCurrentPartnerId();
+  }, [user?.id, role]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -121,9 +83,19 @@ export default function ManageExpense() {
       await approveExpense(id, Number(user.id));
       showSuccess("Expense approved successfully.");
       fetchExpenses();
-      fetchExpenses();
     } catch (err: any) {
       showError(err?.response?.data?.message || "Approval failed.");
+    }
+  };
+
+  const handleBulkDelete = async (ids: number[]) => {
+    try {
+      await Promise.all(ids.map((id) => deleteExpense(id)));
+      showSuccess(`${ids.length} expenses deleted.`);
+      fetchExpenses();
+    } catch (err: any) {
+      showError("Some deletions failed. Refreshing list...");
+      fetchExpenses();
     }
   };
 
@@ -139,7 +111,7 @@ export default function ManageExpense() {
         <div className="flex flex-col gap-3 border-b border-gray-200 px-6 py-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              All Expenses
+              All Expenses ledger
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Review, approve and manage all expense records
@@ -163,12 +135,13 @@ export default function ManageExpense() {
           ) : (
             <DataTable
               data={expenses}
-              columns={getExpenseColumns(handleApprove, categories, currentPartnerId, role)}
-              detailFields={getExpenseDetailFields(categories)}
+              columns={getExpenseColumns(handleApprove, [], currentPartnerId, role)}
+              detailFields={getExpenseDetailFields([])}
               title=""
-              searchKeys={["description"]}
-              searchPlaceholder="Search by notes..."
+              searchKeys={["description", "categoryName", "partnerName", "employeeName", "assetName"]}
+              searchPlaceholder="Search list..."
               onDelete={(id) => handleDelete(id as number)}
+              onBulkDelete={handleBulkDelete}
               onEdit={(row) => setEditExpense(row)}
             />
           )}
@@ -182,10 +155,6 @@ export default function ManageExpense() {
           expense={editExpense}
           onClose={() => setEditExpense(null)}
           onUpdated={fetchExpenses}
-          assets={assets}
-          refreshAssets={fetchAssets}
-          partners={partners}
-          categories={categories}
         />
       )}
     </div>
