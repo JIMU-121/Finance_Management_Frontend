@@ -14,6 +14,7 @@ import {
 } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
 import { usePagination } from "../../hooks/usePagination";
+import Select from "../../components/form/Select";
 import {
   getAllPartners,
   createPartner,
@@ -30,6 +31,12 @@ type PartnerUser = Partner & {
 };
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
+
+const branchMap: Record<number, string> = {
+  1: "Surat",
+  2: "Mumbai",
+  3: "Delhi",
+};
 
 const partnerColumns: ColumnDef<PartnerUser>[] = [
   {
@@ -61,14 +68,8 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
       </span>
     ),
   },
-  {
-    header: "Partnership Type",
-    render: (row) => (
-      <span className="whitespace-nowrap text-gray-600 dark:text-gray-300 capitalize">
-        {row.partnershipType || "—"}
-      </span>
-    ),
-  },
+  
+
   {
     header: "Share (%)",
     render: (row) => (
@@ -78,22 +79,29 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     ),
   },
   {
-    header: "Branch",
+    header: "Status",
     render: (row) => (
-      <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {row.branchId ? `Branch #${row.branchId}` : "—"}
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+          row._isPartnerCreated
+            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+        }`}
+      >
+        {row._isPartnerCreated ? "Created" : "Pending"}
       </span>
     ),
   },
   {
-    header: "Status",
-    render: () => (
-      <span
-        className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
-      >
-        Created
-      </span>
-    ),
+    header: "Branch",
+    render: (row) => {
+      const id = row.branchId;
+      return (
+        <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
+          {id ? branchMap[id] || `Branch #${id}` : "—"}
+        </span>
+      );
+    },
   },
 ];
 
@@ -107,8 +115,7 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   },
   {
     label: "Share Percentage",
-    render: (r) =>
-      r.sharePercentage ? `${r.sharePercentage}%` : "—",
+    render: (r) => (r.sharePercentage ? `${r.sharePercentage}%` : "—"),
   },
   {
     label: "Branch ID",
@@ -116,8 +123,7 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   },
   {
     label: "Is Main Partner",
-    render: (r) =>
-      r.isMainPartner ? "Yes" : "No",
+    render: (r) => (r.isMainPartner ? "Yes" : "No"),
   },
   { label: "User ID", render: (r) => r.userId },
 ];
@@ -360,6 +366,7 @@ export default function ManagePartners() {
   );
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
+  const [activeTab, setActiveTab] = useState("registered");
   const navigate = useNavigate();
 
   // Pagination hook
@@ -406,26 +413,26 @@ export default function ManagePartners() {
 
   // ── Tab switch ───────────────────────────────────────────────────────────────
   const tabs = [
-      {
-        key: "registered",
-        label: "Registered Partners",
-        icon: (
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
-            />
-          </svg>
-        ),
-      },
-    ];
+    {
+      key: "registered",
+      label: "Registered Partners",
+      icon: (
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+          />
+        </svg>
+      ),
+    },
+  ];
 
   function handleRegisterUser() {
     navigate("/manage-partner/register");
@@ -448,7 +455,12 @@ export default function ManagePartners() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  className="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 transition-all dark:text-blue-400"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
+                    activeTab === tab.key
+                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -469,11 +481,7 @@ export default function ManagePartners() {
         {/* ── Tab content ── */}
         <div className="p-6">
           {loadingPartners ? (
-            <Spinner
-              size="md"
-              label="Loading partners..."
-              className="py-16"
-            />
+            <Spinner size="md" label="Loading partners..." className="py-16" />
           ) : (
             <DataTable
               data={registeredPartners}
@@ -481,9 +489,7 @@ export default function ManagePartners() {
               detailFields={partnerDetailFields}
               onDelete={handleDelete}
               onEdit={(row) => setEditPartner(row)}
-              searchKeys={[
-                "partnershipType",
-              ]}
+              searchKeys={["partnershipType"]}
               searchPlaceholder="Search registered partners..."
               title="Registered Firm Partners"
               pagination={paginationProps}
