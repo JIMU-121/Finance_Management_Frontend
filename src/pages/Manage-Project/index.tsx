@@ -66,7 +66,6 @@ export default function ManageProject() {
               ))}
             </div>
 
-            {/* Right - Add Button */}
             <button
               onClick={() => setActiveTab("add")}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
@@ -76,7 +75,6 @@ export default function ManageProject() {
           </div>
         </div>
 
-        {/* Tab Content */}
         <div className="p-6">
           {activeTab === "view" && <ViewProjectTable />}
           {activeTab === "add" && (
