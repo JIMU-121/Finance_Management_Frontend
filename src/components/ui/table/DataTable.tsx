@@ -67,9 +67,6 @@ export function DataTable<T extends { id: number }>({
   // ── Sort ──────────────────────────────────────────────────────────────────
   const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
 
-  // ── Sort ──────────────────────────────────────────────────────────────────
-  const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
-
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = sortedData.filter((row) => {
     if (!search) return true;
