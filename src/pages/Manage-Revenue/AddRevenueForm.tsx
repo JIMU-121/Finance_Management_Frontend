@@ -15,11 +15,12 @@ export function AddRevenueForm({
 }) {
   const [partnerId, setPartnerId] = useState<number>(0);
   const [projectId, setProjectId] = useState<number | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [amount, setAmount] = useState<string>("");
   const [date, setDate] = useState<string>(
     new Date().toISOString().split("T")[0],
   );
-  const [revenueFrom, setRevenueFrom] = useState<boolean>(true);
+  const [revenueFrom, setRevenueFrom] = useState<boolean>(false);
   const [notes, setNotes] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,6 +50,33 @@ export function AddRevenueForm({
     if (!/^\d*$/.test(value)) return;
     const formatted = value ? Number(value).toLocaleString("en-IN") : "";
     setAmount(formatted);
+  };
+  const projectMap = React.useMemo(() => {
+    const map = new Map<number, Project>();
+    projects.forEach((p : any) => map.set(p.id, p));
+    return map;
+  }, [projects]);
+
+  const handleProjectChange = (val: string) => {
+    const selectedId = val === "0" ? null : Number(val);
+    setProjectId(selectedId);
+
+    if (!selectedId) {
+      setAmount("");
+      return;
+    }
+
+    const selectedProject = projectMap.get(selectedId);
+
+    if (selectedProject) {
+      const monthlyAmount = selectedProject.projectValue / 12;
+
+      setAmount(
+        monthlyAmount.toLocaleString("en-IN", {
+          maximumFractionDigits: 0,
+        }),
+      );
+    }
   };
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -89,6 +117,7 @@ export function AddRevenueForm({
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Partner */}
           <div>
             <Label>
               Partner <span className="text-red-500">*</span>
@@ -100,6 +129,8 @@ export function AddRevenueForm({
               placeholder="Select Partner"
             />
           </div>
+
+          {/* Project */}
           <div>
             <Label>Project</Label>
             <LazySelect
@@ -109,6 +140,8 @@ export function AddRevenueForm({
               placeholder="Select Project"
             />
           </div>
+
+          {/* Amount */}
           <div>
             <Label>
               Amount (₹) <span className="text-red-500">*</span>
@@ -120,6 +153,8 @@ export function AddRevenueForm({
               placeholder="e.g. 50,000"
             />
           </div>
+
+          {/* Date */}
           <div>
             <Label>
               Date <span className="text-red-500">*</span>
@@ -130,6 +165,8 @@ export function AddRevenueForm({
               onChange={(e: any) => setDate(e.target.value)}
             />
           </div>
+
+          {/* Checkbox */}
           <div className="flex items-center gap-3 pt-[34px]">
             <input
               type="checkbox"
@@ -142,6 +179,8 @@ export function AddRevenueForm({
               External Revenue
             </Label>
           </div>
+
+          {/* Notes */}
           <div className="md:col-span-2 lg:col-span-3">
             <Label>Notes</Label>
             <Input

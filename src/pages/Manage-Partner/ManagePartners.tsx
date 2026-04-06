@@ -16,6 +16,7 @@ import {
 } from "../../components/ui/table/DataTable";
 import Spinner from "../../components/ui/spinner/Spinner";
 import { usePagination } from "../../hooks/usePagination";
+import Select from "../../components/form/Select";
 import {
   getAllPartners,
   createPartner,
@@ -32,6 +33,12 @@ type PartnerUser = Partner & {
 };
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
+
+const branchMap: Record<number, string> = {
+  1: "Surat",
+  2: "Mumbai",
+  3: "Delhi",
+};
 
 const partnerColumns: ColumnDef<PartnerUser>[] = [
   {
@@ -63,6 +70,8 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
       </span>
     ),
   },
+  
+
   {
     header: "Share (%)",
 
@@ -87,8 +96,26 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
         className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
       >
         Created
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+          row._isPartnerCreated
+            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+        }`}
+      >
+        {row._isPartnerCreated ? "Created" : "Pending"}
       </span>
     ),
+  },
+  {
+    header: "Branch",
+    render: (row) => {
+      const id = row.branchId;
+      return (
+        <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
+          {id ? branchMap[id] || `Branch #${id}` : "—"}
+        </span>
+      );
+    },
   },
 ];
 
@@ -101,6 +128,13 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
 
     render: (r) =>
       r.sharePercentage ? `${r.sharePercentage}%` : "—",
+  {
+    label: "Partnership Type",
+    render: (r) => r.partnershipType || "—",
+  },
+  {
+    label: "Share Percentage",
+    render: (r) => (r.sharePercentage ? `${r.sharePercentage}%` : "—"),
   },
   {
     label: "Branch ID",
@@ -110,6 +144,7 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
     label: "Is Main Partner",
     render: (r) =>
       r.isMainPartner ? "Yes" : "No",
+    render: (r) => (r.isMainPartner ? "Yes" : "No"),
   },
   { label: "User ID", render: (r) => r.userId },
 ];
@@ -134,6 +169,10 @@ function EditPartnerModal({
   // Partner fields
   const [sharePercentage, setSharePercentage] = useState<number | string>(
 
+  const [partnershipType, setPartnershipType] = useState(
+    partner.partnershipType || "",
+  );
+  const [sharePercentage, setSharePercentage] = useState<number | string>(
     partner.sharePercentage || "",
   );
   const [branchId, setBranchId] = useState<number | string>(
@@ -155,6 +194,7 @@ function EditPartnerModal({
 
       const partnerData: Partner = {
         userId: partner.userId,
+        partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
         branchId: branchId ? Number(branchId) : 2, // 👈 Ensures ID 2
         isMainPartner,
@@ -343,6 +383,7 @@ export default function ManagePartners() {
   );
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
+  const [activeTab, setActiveTab] = useState("registered");
   const navigate = useNavigate();
 
   // Pagination hook

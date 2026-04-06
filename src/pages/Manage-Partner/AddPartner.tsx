@@ -11,6 +11,7 @@ import { useNavigate } from "react-router";
 
 import { registerUser } from "../../features/users/userApi";
 import { createPartner } from "../../features/users/partnerApi";
+import Select from "../../components/form/Select";
 
 function AddPartner() {
   const navigate = useNavigate();
@@ -26,6 +27,8 @@ function AddPartner() {
 
   const [loading, setLoading] = useState(false);
 
+  const branchOptions = [{ id: 1, name: "Surat" }];
+
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -37,26 +40,20 @@ function AddPartner() {
     try {
       setLoading(true);
 
-      // ✅ Step 1: Create User
       const userRes: any = await registerUser({
         firstName,
         lastName,
         email,
         password,
-        role: 2, // 👈 Partner role
+        role: 2,
       });
 
-      // ⚠️ Adjust based on your API response structure
-      const userId =
-        userRes?.data?.id ||
-        userRes?.id ||
-        userRes?.data?.userId;
+      const userId = userRes?.data?.id || userRes?.id || userRes?.data?.userId;
 
       if (!userId) {
         throw new Error("User ID not found after registration");
       }
 
-      // ✅ Step 2: Create Partner
       await createPartner({
         userId,
         sharePercentage: Number(sharePercentage) || 0,
@@ -68,7 +65,6 @@ function AddPartner() {
       showSuccess("Partner added successfully 🚀");
 
       navigate("/manage-partner");
-
     } catch (err: any) {
       console.error(err);
       showError(err?.response?.data?.message || "Failed to add partner");
@@ -83,45 +79,61 @@ function AddPartner() {
       <PageBreadcrumb pageTitle="Add Partner" />
 
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-
         {/* Header */}
         <div className="border-b border-gray-200 px-5 py-4 dark:border-gray-700 flex justify-between items-center">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
             Add New Partner
           </h2>
 
-          <Button variant="outline" onClick={() => navigate("/manage-partner")}>
+          <Button onClick={() => navigate("/manage-partner")}>
             Back
           </Button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             <div>
               <Label>First Name *</Label>
-              <Input value={firstName} onChange={(e: any) => setFirstName(e.target.value)} />
+              <Input
+                value={firstName}
+                onChange={(e: any) => setFirstName(e.target.value)}
+              />
             </div>
 
             <div>
               <Label>Last Name *</Label>
-              <Input value={lastName} onChange={(e: any) => setLastName(e.target.value)} />
+              <Input
+                value={lastName}
+                onChange={(e: any) => setLastName(e.target.value)}
+              />
             </div>
 
             <div>
               <Label>Email *</Label>
-              <Input type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} />
+              <Input
+                type="email"
+                value={email}
+                onChange={(e: any) => setEmail(e.target.value)}
+              />
             </div>
 
             <div>
               <Label>Password *</Label>
               <Input type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
+              <Input
+                type="password"
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+              />
             </div>
 
             <div>
               <Label>Share %</Label>
-              <Input type="number" value={sharePercentage} onChange={(e: any) => setSharePercentage(e.target.value)} />
+              <Input
+                type="number"
+                value={sharePercentage}
+                onChange={(e: any) => setSharePercentage(e.target.value)}
+              />
             </div>
 
             <div>
@@ -130,6 +142,14 @@ function AddPartner() {
                 options={[{ value: "2", label: "Surat" }]} 
                 value={branchId}
                 onChange={(val) => setBranchId(val)}
+
+              <Select
+                value={branchId}
+                onChange={(val: string) => setBranchId(val)}
+                options={branchOptions.map((branch) => ({
+                  value: String(branch.id),
+                  label: branch.name,
+                }))}
                 placeholder="Select Branch"
               />
             </div>
@@ -138,7 +158,11 @@ function AddPartner() {
 
           {/* Buttons */}
           <div className="flex justify-end gap-3 border-t pt-5 dark:border-gray-700">
-            <Button variant="outline" type="button" onClick={() => navigate("/manage-partner")}>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => navigate("/manage-partner")}
+            >
               Cancel
             </Button>
 
