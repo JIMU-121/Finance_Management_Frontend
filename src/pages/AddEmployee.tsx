@@ -4,22 +4,16 @@ import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
-import Select from "../components/form/Select";
 import Button from "../components/ui/button/Button";
 import { MultiStepForm } from "../components/ui/stepper/MultiStepForm";
-import DatePicker from "../components/form/date-picker";
 import { showError, showSuccess } from "../utils/toast";
 import { registerUser } from "../features/users/userApi";
 import { createEmployee } from "../features/users/employeeApi";
+import { useEmployeeForm } from "../components/employees/useEmployeeForm";
+import { ProfessionalFields, FinancialFields } from "../components/employees/EmployeeFormFields";
 
 // Role 3 is Employee
 const EMPLOYEE_ROLE_ID = 3;
-
-const DepartmentType = [
-  { value: "1", label: "HR" },
-  { value: "2", label: "Accounts" },
-  { value: "3", label: "Developer" },
-];
 
 export default function AddEmployee() {
   const navigate = useNavigate();
@@ -31,35 +25,7 @@ export default function AddEmployee() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // --- Step 2 State: Professional ---
-  const [employeeCode, setEmployeeCode] = useState("");
-  const [branchId, setBranchId] = useState("1");
-  const [department, setDepartment] = useState("");
-  const [position, setPosition] = useState("");
-
-  // --- Step 3 State: Financial & Joining ---
-  const [monthlySalary, setMonthlySalary] = useState("");
-  const [previousCTC, setPreviousCTC] = useState("");
-  const [currentCTC, setCurrentCTC] = useState("");
-  const [joinDate, setJoinDate] = useState("");
-
-  const formatAmountInput = (value: string, setter: (val: string) => void) => {
-    const rawValue = value.replace(/,/g, "");
-    if (!/^\d*$/.test(rawValue)) return;
-    const formatted = rawValue ? Number(rawValue).toLocaleString("en-IN") : "";
-    setter(formatted);
-    return rawValue;
-  };
-
-  const handleCTCChange = (value: string) => {
-    const rawCTC = formatAmountInput(value, setCurrentCTC);
-    if (rawCTC) {
-      const monthly = Math.round(Number(rawCTC) / 12);
-      setMonthlySalary(monthly.toLocaleString("en-IN"));
-    } else {
-      setMonthlySalary("");
-    }
-  };
+  const { form, handleChange, formatAmountInput, handleCTCChange } = useEmployeeForm();
 
   const handleValidate = async (index: number): Promise<boolean> => {
     if (index === 0) {
@@ -72,12 +38,12 @@ export default function AddEmployee() {
         return false;
       }
     } else if (index === 1) {
-      if (!employeeCode || !branchId || !department || !position) {
+      if (!form.employeeCode || !form.branchId || !form.department || !form.position) {
         showError("All professional detail fields are required.");
         return false;
       }
     } else if (index === 2) {
-      if (!monthlySalary || !currentCTC || !joinDate) {
+      if (!form.monthlySalary || !form.currentCTC || !form.joinDate) {
         showError("Salary and Joining Date are required.");
         return false;
       }
@@ -108,14 +74,14 @@ export default function AddEmployee() {
       // ✅ Step 2: Create Employee Record
       await createEmployee({
         userId,
-        branchId: Number(branchId),
-        employeeCode,
-        department,
-        position,
-        monthlySalary: Number(monthlySalary.replace(/,/g, "")) || 0,
-        previousCTC: Number(previousCTC.replace(/,/g, "")) || 0,
-        currentCTC: Number(currentCTC.replace(/,/g, "")) || 0,
-        joinDate: joinDate,
+        branchId: Number(form.branchId),
+        employeeCode: form.employeeCode,
+        department: form.department,
+        position: form.position,
+        monthlySalary: Number(String(form.monthlySalary).replace(/,/g, "")) || 0,
+        previousCTC: Number(String(form.previousCTC).replace(/,/g, "")) || 0,
+        currentCTC: Number(String(form.currentCTC).replace(/,/g, "")) || 0,
+        joinDate: form.joinDate,
       });
 
       showSuccess("Employee registered successfully 🚀");
@@ -160,27 +126,7 @@ export default function AddEmployee() {
       subtitle: "Employee's role and location details.",
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-2">
-          <div>
-            <Label>Employee Code *</Label>
-            <Input value={employeeCode} onChange={(e: any) => setEmployeeCode(e.target.value)} placeholder="EMP-2026-001" />
-          </div>
-          <div>
-            <Label>Branch ID *</Label>
-            <Input type="number" value={branchId} onChange={(e: any) => setBranchId(e.target.value)} placeholder="1" />
-          </div>
-          <div>
-            <Label>Department *</Label>
-            <Select
-              options={DepartmentType}
-              value={DepartmentType.find((d) => d.label === department)?.value || ""}
-              onChange={(val) => setDepartment(DepartmentType.find((d) => d.value === val)?.label ?? val)}
-              placeholder="Select Department"
-            />
-          </div>
-          <div>
-            <Label>Position *</Label>
-            <Input value={position} onChange={(e: any) => setPosition(e.target.value)} placeholder="Senior Developer" />
-          </div>
+          <ProfessionalFields form={form} handleChange={handleChange} />
         </div>
       )
     },
@@ -190,27 +136,7 @@ export default function AddEmployee() {
       subtitle: "Salary and start date information.",
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 py-2">
-          <div>
-            <Label>Previous CTC (₹)</Label>
-            <Input value={previousCTC} onChange={(e: any) => formatAmountInput(e.target.value, setPreviousCTC)} placeholder="e.g. 6,00,000" />
-          </div>
-          <div>
-            <Label>Current CTC (₹) *</Label>
-            <Input value={currentCTC} onChange={(e: any) => handleCTCChange(e.target.value)} placeholder="e.g. 8,00,000" />
-          </div>
-          <div className="md:col-span-2">
-            <Label>Monthly Salary (₹) *</Label>
-            <Input value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} placeholder="e.g. 50,000" />
-          </div>
-          <div className="md:col-span-2">
-            <DatePicker
-              id="joining-date"
-              label="Joining Date *"
-              placeholder="Select Date"
-              defaultDate={joinDate}
-              onChange={(_selectedDates, dateStr) => setJoinDate(dateStr)}
-            />
-          </div>
+          <FinancialFields form={form} handleChange={handleChange} formatAmountInput={formatAmountInput} handleCTCChange={handleCTCChange} />
         </div>
       )
     }

@@ -20,10 +20,7 @@ export function formatIndianNumber(value: number | string): string {
   return new Intl.NumberFormat("en-IN").format(Number(numStr));
 }
 
-/** Strips commas and returns a plain numeric string */
-export function parseIndianNumber(value: string): string {
-  return value.replace(/,/g, "");
-}
+
 
 /**
  * A text input that stores raw digits internally and displays formatted Indian numbers.

@@ -9,7 +9,7 @@ import { EyeCloseIcon, EyeIcon } from "../icons";
 import { showError, showSuccess } from "../utils/toast";
 import { getAllUsers, registerUser, deleteUser, User, updateUser } from "../features/users/userApi";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
-import Spinner from "../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../components/ui/skeleton/TableSkeleton";
 import { usePagination } from "../hooks/usePagination";
 import { PageTabs, PageTab } from "../components/ui/tabs/PageTabs";
 import { ModalShell } from "../components/ui/modal/ModalShell";
@@ -343,7 +343,9 @@ export default function ManageUser() {
           {activeTab === "view" && (
             <>
               {loadingUsers ? (
-                <Spinner size="md" label="Loading users..." className="py-16" />
+                <div className="py-8">
+                  <TableSkeleton columns={4} rows={5} />
+                </div>
               ) : (
                 <DataTable
                   data={users}

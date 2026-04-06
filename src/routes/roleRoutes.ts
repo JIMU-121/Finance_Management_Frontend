@@ -1,4 +1,4 @@
-export const ROLE_HOME_ROUTE: Record<string, string> = {
+const ROLE_HOME_ROUTE: Record<string, string> = {
   Admin: "/",
   Manager: "/manager/dashboard",
   User: "/dashboard",

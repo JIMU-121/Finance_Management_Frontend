@@ -1,99 +1,29 @@
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { showError, showSuccess } from "../../utils/toast";
 import { createRevenue } from "../../features/revenue/revenueApi";
-import { getAllPartners } from "../../features/users/partnerApi";
-import { getAllProjects } from "../../features/projects/projectAPI";
-import Label from "../../components/form/Label";
-import LazySelect from "../../components/form/LazySelect";
-import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import { useRevenueForm } from "./useRevenueForm";
+import { RevenueFormFields } from "./RevenueFormFields";
 
-export function AddRevenueForm({
-  onAdded,
-}: {
-  onAdded: () => void;
-}) {
-  const [partnerId, setPartnerId] = useState<number>(0);
-  const [projectId, setProjectId] = useState<number | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [amount, setAmount] = useState<string>("");
-  const [date, setDate] = useState<string>(
-    new Date().toISOString().split("T")[0],
-  );
-  const [revenueFrom, setRevenueFrom] = useState<boolean>(false);
-  const [notes, setNotes] = useState<string>("");
+export function AddRevenueForm({ onAdded }: { onAdded: () => void }) {
+  const { form, handleChange, handleAmountChange, handleProjectChange, partners, projects } = useRevenueForm();
   const [submitting, setSubmitting] = useState(false);
-
-  const loadPartners = useCallback(async () => {
-    const res = await getAllPartners();
-    return (res || []).map((p: any) => ({
-      value: String(p.id),
-      label: `${p.user?.firstName} ${p.user?.lastName}`
-    }));
-  }, []);
-
-  const loadProjects = useCallback(async () => {
-    const res = await getAllProjects();
-    const projects = (res as any).data || res || [];
-    return [
-      { value: "0", label: "None" },
-      ...projects.map((p: any) => ({
-        value: String(p.id),
-        label: p.name,
-      }))
-    ];
-  }, []);
-
-  const handleAmountChange = (e: any) => {
-    let value = e.target.value;
-    value = value.replace(/,/g, "");
-    if (!/^\d*$/.test(value)) return;
-    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
-    setAmount(formatted);
-  };
-  const projectMap = React.useMemo(() => {
-    const map = new Map<number, Project>();
-    projects.forEach((p : any) => map.set(p.id, p));
-    return map;
-  }, [projects]);
-
-  const handleProjectChange = (val: string) => {
-    const selectedId = val === "0" ? null : Number(val);
-    setProjectId(selectedId);
-
-    if (!selectedId) {
-      setAmount("");
-      return;
-    }
-
-    const selectedProject = projectMap.get(selectedId);
-
-    if (selectedProject) {
-      const monthlyAmount = selectedProject.projectValue / 12;
-
-      setAmount(
-        monthlyAmount.toLocaleString("en-IN", {
-          maximumFractionDigits: 0,
-        }),
-      );
-    }
-  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partnerId || !amount || !date) {
+    if (!form.partnerId || !form.amount || !form.date) {
       showError("Please fill in all required fields.");
       return;
     }
     try {
       setSubmitting(true);
       await createRevenue({
-        partnerId,
-        projectId: projectId === 0 ? null : projectId,
-        amount: Number(String(amount).replace(/,/g, "")),
-        date: new Date(date).toISOString(),
-        revenue_From: revenueFrom,
-        notes,
+        partnerId: form.partnerId,
+        projectId: form.projectId === 0 ? null : form.projectId,
+        amount: Number(String(form.amount).replace(/,/g, "")),
+        date: new Date(form.date).toISOString(),
+        revenue_From: form.revenueFrom,
+        notes: form.notes,
       });
       showSuccess("Revenue record created successfully.");
       onAdded();
@@ -116,81 +46,14 @@ export function AddRevenueForm({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Partner */}
-          <div>
-            <Label>
-              Partner <span className="text-red-500">*</span>
-            </Label>
-            <LazySelect
-              loadOptions={loadPartners}
-              value={String(partnerId || "")}
-              onChange={(val) => setPartnerId(Number(val))}
-              placeholder="Select Partner"
-            />
-          </div>
-
-          {/* Project */}
-          <div>
-            <Label>Project</Label>
-            <LazySelect
-              loadOptions={loadProjects}
-              value={String(projectId || "0")}
-              onChange={(val) => setProjectId(val === "0" ? null : Number(val))}
-              placeholder="Select Project"
-            />
-          </div>
-
-          {/* Amount */}
-          <div>
-            <Label>
-              Amount (₹) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="text"
-              value={amount}
-              onChange={handleAmountChange}
-              placeholder="e.g. 50,000"
-            />
-          </div>
-
-          {/* Date */}
-          <div>
-            <Label>
-              Date <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e: any) => setDate(e.target.value)}
-            />
-          </div>
-
-          {/* Checkbox */}
-          <div className="flex items-center gap-3 pt-[34px]">
-            <input
-              type="checkbox"
-              id="revenueFrom"
-              checked={revenueFrom}
-              onChange={(e) => setRevenueFrom(e.target.checked)}
-              className="h-5 w-5 rounded border-gray-300 text-brand-500"
-            />
-            <Label htmlFor="revenueFrom" className="!mb-0">
-              External Revenue
-            </Label>
-          </div>
-
-          {/* Notes */}
-          <div className="md:col-span-2 lg:col-span-3">
-            <Label>Notes</Label>
-            <Input
-              value={notes}
-              onChange={(e: any) => setNotes(e.target.value)}
-              placeholder="e.g. Monthly project revenue"
-              disabled={!revenueFrom}
-            />
-          </div>
-        </div>
+        <RevenueFormFields 
+          form={form} 
+          handleChange={handleChange} 
+          handleAmountChange={handleAmountChange} 
+          handleProjectChange={handleProjectChange} 
+          partners={partners} 
+          projects={projects} 
+        />
 
         <div className="mt-8 flex gap-4 pt-4 border-t border-gray-200 dark:border-gray-800">
           <Button

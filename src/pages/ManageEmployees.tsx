@@ -1,33 +1,27 @@
-import { useState, useEffect, JSX } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { DataTable, ColumnDef, DetailField } from "../components/ui/table/DataTable";
 import Label from "../components/form/Label";
 import Input from "../components/form/input/InputField";
-import Select from "../components/form/Select";
 import Button from "../components/ui/button/Button";
 import PageBreadcrumb from "../components/common/PageBreadCrumb";
 import PageMeta from "../components/common/PageMeta";
-import Spinner from "../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../components/ui/skeleton/TableSkeleton";
 import { showError, showSuccess } from "../utils/toast";
 import { deleteUser } from "../features/users/userApi";
 import { usePagination } from "../hooks/usePagination";
-import { getEmployeeByUserId, createEmployee, updateEmployee } from "../features/users/employeeApi";
-import { EmployeeRecord, DocType, User } from "../types/apiTypes";
+import { getAllEmployees, createEmployee, updateEmployee } from "../features/users/employeeApi";
+import { EmployeeRecord } from "../types/apiTypes";
 import DatePicker from "../components/form/date-picker";
-import { getAllDocTypes } from "../features/docTypes/docTypeApi";
 import UploadDocumentModal from "../components/employees/UploadDocumentModal";
-
 // ─── Types and Constants ────────────────────────────────────────────────────────
 type EmployeeUser = EmployeeRecord & {
   id: number; // Required for DataTable
   _isEmployeeCreated?: boolean;
 };
 
-const DepartmentType = [
-  { value: "1", label: "HR" },
-  { value: "2", label: "Accounts" },
-  { value: "3", label: "Developer" },
-];
+import { useEmployeeForm } from "../components/employees/useEmployeeForm";
+import { ProfessionalFields, FinancialFields } from "../components/employees/EmployeeFormFields";
 
 // ─── Column definitions ───────────────────────────────────────────────────────
 
@@ -173,53 +167,37 @@ function EditEmployeeModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const [department, setDepartment] = useState(employee.department || "");
-  const [position, setPosition] = useState(employee.position || "");
-  const [monthlySalary, setMonthlySalary] = useState<string | number>(employee.monthlySalary ?? "");
-  const [currentCTC, setCurrentCTC] = useState<string | number>(employee.currentCTC ?? "");
-  const [joinDate, setJoinDate] = useState(employee.joinDate || "");
-  const [relievingDate, setRelievingDate] = useState(employee.relievingDate || "");
-  const [takenLeave, setTakenLeave] = useState<string | number>(employee.takenLeave ?? 0);
-  const [status, setStatus] = useState("Active");
-  const [employeeCode, setEmployeeCode] = useState(employee.employeeCode || "");
-  const [branchId, setBranchId] = useState<string | number>(employee.branchId ?? "");
-  const [previousCTC, setPreviousCTC] = useState<string | number>(employee.previousCTC ?? "");
+  const { form, handleChange, formatAmountInput, handleCTCChange } = useEmployeeForm({
+    department: employee.department || "",
+    position: employee.position || "",
+    monthlySalary: employee.monthlySalary ?? "",
+    currentCTC: employee.currentCTC ?? "",
+    joinDate: employee.joinDate || "",
+    relievingDate: employee.relievingDate || "",
+    takenLeave: employee.takenLeave ?? 0,
+    status: "Active",
+    employeeCode: employee.employeeCode || "",
+    branchId: employee.branchId ?? "",
+    previousCTC: employee.previousCTC ?? "",
+  });
 
   const [saving, setSaving] = useState(false);
-
-  const formatAmountInput = (value: string, setter: (val: string) => void) => {
-    const rawValue = value.replace(/,/g, "");
-    if (!/^\d*$/.test(rawValue)) return;
-    const formatted = rawValue ? Number(rawValue).toLocaleString("en-IN") : "";
-    setter(formatted);
-    return rawValue;
-  };
-
-  const handleCTCChange = (value: string) => {
-    const rawCTC = formatAmountInput(value, setCurrentCTC);
-    if (rawCTC) {
-      const monthly = Math.round(Number(rawCTC) / 12);
-      setMonthlySalary(monthly.toLocaleString("en-IN"));
-    } else {
-      setMonthlySalary("");
-    }
-  };
 
   const handleSave = async () => {
     try {
       setSaving(true);
       const employeeData: EmployeeRecord = {
         userId: employee.userId,
-        department,
-        position,
-        monthlySalary: Number(String(monthlySalary).replace(/,/g, "")) || 0,
-        currentCTC: Number(String(currentCTC).replace(/,/g, "")) || 0,
-        joinDate,
-        relievingDate: relievingDate || undefined,
-        takenLeave: Number(takenLeave) || 0,
-        employeeCode,
-        branchId: Number(branchId) || 0,
-        previousCTC: Number(String(previousCTC).replace(/,/g, "")) || 0,
+        department: form.department,
+        position: form.position,
+        monthlySalary: Number(String(form.monthlySalary).replace(/,/g, "")) || 0,
+        currentCTC: Number(String(form.currentCTC).replace(/,/g, "")) || 0,
+        joinDate: form.joinDate,
+        relievingDate: form.relievingDate || undefined,
+        takenLeave: Number(form.takenLeave) || 0,
+        employeeCode: form.employeeCode,
+        branchId: Number(form.branchId) || 0,
+        previousCTC: Number(String(form.previousCTC).replace(/,/g, "")) || 0,
       };
 
       if (employee.id) {
@@ -278,63 +256,26 @@ function EditEmployeeModal({
 
         {/* Editable Fields */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <Label>Employee Code</Label>
-            <Input value={employeeCode} onChange={(e: any) => setEmployeeCode(e.target.value)} placeholder="EMP-2026-001" />
-          </div>
-          <div>
-            <Label>Branch ID</Label>
-            <Input type="number" value={branchId} onChange={(e: any) => setBranchId(e.target.value)} placeholder="2" />
-          </div>
-          <div>
-            <Label>Department</Label>
-            <Select
-              options={DepartmentType}
-              value={DepartmentType.find((d) => d.label === department)?.value || ""}
-              onChange={(val) => setDepartment(DepartmentType.find((d) => d.value === val)?.label ?? val)}
-            />
-          </div>
-          <div>
-            <Label>Position</Label>
-            <Input value={position} onChange={(e: any) => setPosition(e.target.value)} placeholder="Backend Developer" />
-          </div>
-          <div>
-            <Label>Previous CTC</Label>
-            <Input type="text" value={previousCTC} onChange={(e: any) => formatAmountInput(e.target.value, setPreviousCTC)} />
-          </div>
-          <div>
-            <Label>Current CTC</Label>
-            <Input type="text" value={currentCTC} onChange={(e: any) => handleCTCChange(e.target.value)}/>
-          </div>
-          <div>
-            <Label>Monthly Salary</Label>
-          <Input type="text" value={monthlySalary} onChange={(e: any) => formatAmountInput(e.target.value, setMonthlySalary)} />          </div>
-          <div>
-            <DatePicker
-              id="edit-joinDate"
-              label="Joining Date"
-              defaultDate={joinDate}
-              onChange={(_d, str) => setJoinDate(str)}
-            />
-          </div>
+          <ProfessionalFields form={form} handleChange={handleChange} />
+          <FinancialFields form={form} handleChange={handleChange} formatAmountInput={formatAmountInput} handleCTCChange={handleCTCChange} isEdit={true} />
           <div>
             <DatePicker
               id="edit-relievingDate"
               label="Relieving Date"
-              defaultDate={relievingDate || undefined}
-              onChange={(_d, str) => setRelievingDate(str)}
+              defaultDate={form.relievingDate || undefined}
+              onChange={(_d, str) => handleChange("relievingDate", str)}
             />
           </div>
           <div>
             <Label>Leave Taken</Label>
-            <Input type="number" value={takenLeave} onChange={(e: any) => setTakenLeave(e.target.value)} placeholder="0" />
+            <Input type="number" value={form.takenLeave} onChange={(e: any) => handleChange("takenLeave", e.target.value)} placeholder="0" />
           </div>
           <div>
             <Label>Status</Label>
             <div className="relative">
               <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                value={form.status}
+                onChange={(e) => handleChange("status", e.target.value)}
                 className="h-11 w-full appearance-none rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 pr-11 text-sm text-gray-800 outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 dark:border-gray-700 dark:text-white/90"
               >
                 <option value="Active">Active</option>
@@ -481,7 +422,9 @@ export default function ManageEmployees() {
         {/* ── Tab content ── */}
         <div className="p-6">
           {loadingEmployees ? (
-            <Spinner size="md" label="Loading employees..." className="py-16" />
+            <div className="py-8">
+              <TableSkeleton columns={7} rows={6} />
+            </div>
           ) : (
             <DataTable
               data={activeEmployees}

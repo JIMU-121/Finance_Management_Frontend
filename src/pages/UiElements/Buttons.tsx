@@ -4,6 +4,15 @@ import PageMeta from "../../components/common/PageMeta";
 import Button from "../../components/ui/button/Button";
 import { BoxIcon } from "../../icons";
 
+const BUTTON_SECTIONS = [
+  { title: "Primary Button", variant: "primary" },
+  { title: "Primary Button with Left Icon", variant: "primary", iconPos: "start" },
+  { title: "Primary Button with Right Icon", variant: "primary", iconPos: "end" },
+  { title: "Secondary Button", variant: "outline" },
+  { title: "Outline Button with Left Icon", variant: "outline", iconPos: "start" },
+  { title: "Outline Button with Right Icon", variant: "outline", iconPos: "end" },
+] as const;
+
 export default function Buttons() {
   return (
     <div>
@@ -13,105 +22,23 @@ export default function Buttons() {
       />
       <PageBreadcrumb pageTitle="Buttons" />
       <div className="space-y-5 sm:space-y-6">
-        {/* Primary Button */}
-        <ComponentCard title="Primary Button">
-          <div className="flex items-center gap-5">
-            <Button size="sm" variant="primary">
-              Button Text
-            </Button>
-            <Button size="md" variant="primary">
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>
-        {/* Primary Button with Start Icon */}
-        <ComponentCard title="Primary Button with Left Icon">
-          <div className="flex items-center gap-5">
-            <Button
-              size="sm"
-              variant="primary"
-              startIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-            <Button
-              size="md"
-              variant="primary"
-              startIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>
-        {/* Primary Button with Start Icon */}
-        <ComponentCard title="Primary Button with Right Icon">
-          <div className="flex items-center gap-5">
-            <Button
-              size="sm"
-              variant="primary"
-              endIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-            <Button
-              size="md"
-              variant="primary"
-              endIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>
-        {/* Outline Button */}
-        <ComponentCard title="Secondary Button">
-          <div className="flex items-center gap-5">
-            {/* Outline Button */}
-            <Button size="sm" variant="outline">
-              Button Text
-            </Button>
-            <Button size="md" variant="outline">
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>
-        {/* Outline Button with Start Icon */}
-        <ComponentCard title="Outline Button with Left Icon">
-          <div className="flex items-center gap-5">
-            <Button
-              size="sm"
-              variant="outline"
-              startIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-            <Button
-              size="md"
-              variant="outline"
-              startIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>{" "}
-        {/* Outline Button with Start Icon */}
-        <ComponentCard title="Outline Button with Right Icon">
-          <div className="flex items-center gap-5">
-            <Button
-              size="sm"
-              variant="outline"
-              endIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-            <Button
-              size="md"
-              variant="outline"
-              endIcon={<BoxIcon className="size-5" />}
-            >
-              Button Text
-            </Button>
-          </div>
-        </ComponentCard>
+        {BUTTON_SECTIONS.map((section, idx) => (
+          <ComponentCard key={idx} title={section.title}>
+            <div className="flex items-center gap-5">
+              {(["sm", "md"] as const).map((size) => (
+                <Button
+                  key={size}
+                  size={size}
+                  variant={section.variant}
+                  startIcon={section.iconPos === "start" ? <BoxIcon className="size-5" /> : undefined}
+                  endIcon={section.iconPos === "end" ? <BoxIcon className="size-5" /> : undefined}
+                >
+                  Button Text
+                </Button>
+              ))}
+            </div>
+          </ComponentCard>
+        ))}
       </div>
     </div>
   );

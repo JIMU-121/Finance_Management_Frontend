@@ -13,7 +13,7 @@ import {
 } from "../../features/expenses/expenseCategoryApi";
 import { ExpenseCategory } from "../../types/apiTypes";
 import { DataTable, ColumnDef, DetailField } from "../../components/ui/table/DataTable";
-import Spinner from "../../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 import { ModalShell } from "../../components/ui/modal/ModalShell";
 
 // ─── DataTable config ──────────────────────────────────────────────────────────
@@ -194,7 +194,9 @@ export default function ManageCategory() {
 
         <div className="p-6">
           {loading ? (
-            <Spinner size="md" label="Loading categories..." className="py-16" />
+            <div className="py-8">
+              <TableSkeleton columns={3} rows={5} />
+            </div>
           ) : (
             <DataTable
               data={categories}

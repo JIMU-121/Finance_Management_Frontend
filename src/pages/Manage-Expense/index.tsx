@@ -11,7 +11,7 @@ import {
 import { Expense } from "../../types/apiTypes";
 import { getPartnerByUserId } from "../../features/users/partnerApi";
 import { DataTable } from "../../components/ui/table/DataTable";
-import Spinner from "../../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 import { useAuth } from "../../context/AuthContext";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -130,7 +130,9 @@ export default function ManageExpense() {
         {/* Expense table */}
         <div className="p-6">
           {loading ? (
-            <Spinner size="md" label="Loading expenses..." className="py-16" />
+            <div className="py-8">
+              <TableSkeleton columns={5} rows={5} />
+            </div>
           ) : (
             <DataTable
               data={expenses}

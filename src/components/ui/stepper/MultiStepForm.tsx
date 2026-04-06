@@ -40,7 +40,7 @@ type StepIndicatorProps = {
     currentStep: number;
 };
 
-export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
+function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
     const total = steps.length;
     const progressPercent = total > 1 ? ((currentStep - 1) / (total - 1)) * 100 : 0;
 

@@ -238,14 +238,6 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
         <Label>Manager Contact <span className="text-error-500">*</span></Label>
         <Input {...register("managerContact", { required: "Required" })} />
       </div>
-      <div>
-        <Label>Manager Email <span className="text-error-500">*</span></Label>
-        <Input type="email" {...register("managerEmail", { required: "Required" })} />
-      </div>
-      <div>
-          <Label>Manager Contact <span className="text-error-500">*</span></Label>
-          <Input {...register("managerContact", { required: "Required" })} />
-        </div>
     </div>
   );
 

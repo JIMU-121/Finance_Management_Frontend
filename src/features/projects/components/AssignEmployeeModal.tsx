@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ModalShell } from "../../../components/ui/modal/ModalShell";
 import InitialAvatar from "../../../components/ui/avatar/InitialAvatar";
 import Input from "../../../components/form/input/InputField";
-import Spinner from "../../../components/ui/spinner/Spinner";
+import Skeleton from "../../../components/ui/skeleton/Skeleton";
 import { showSuccess, showError } from "../../../utils/toast";
 import {
   assignEmployeeToProject,
@@ -135,7 +135,11 @@ export function AssignEmployeeModal({
         {/* List content */}
         <div className="space-y-6">
           {loading ? (
-            <Spinner size="sm" label="Loading employees..." className="py-8" />
+            <div className="py-8 space-y-3">
+              <Skeleton variant="text" className="h-16 w-full" />
+              <Skeleton variant="text" className="h-16 w-full" />
+              <Skeleton variant="text" className="h-16 w-full" />
+            </div>
           ) : filtered.length === 0 ? (
             <p className="py-8 text-center text-sm text-gray-400">No employees found.</p>
           ) : (

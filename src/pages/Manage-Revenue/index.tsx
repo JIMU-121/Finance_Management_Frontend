@@ -9,7 +9,7 @@ import {
 } from "../../features/revenue/revenueApi";
 import { Revenue } from "../../types/apiTypes";
 import { DataTable, DetailField } from "../../components/ui/table/DataTable";
-import Spinner from "../../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 import { AddRevenueForm } from "./AddRevenueForm";
 import { EditRevenueModal } from "./EditRevenueModal";
 import { getRevenueColumns } from "./getRevenueColumns";
@@ -127,7 +127,9 @@ export default function ManageRevenue() {
         <div className="p-6">
           {activeTab === "view" ? (
             loading ? (
-              <Spinner size="md" label="Loading revenue records..." className="py-16" />
+              <div className="py-8">
+                <TableSkeleton columns={4} rows={5} />
+              </div>
             ) : (
               <DataTable
                 data={revenues}

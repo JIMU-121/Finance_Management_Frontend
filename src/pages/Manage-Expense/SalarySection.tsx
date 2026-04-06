@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Label from "../../components/form/Label";
-import Spinner from "../../components/ui/spinner/Spinner";
+import Skeleton from "../../components/ui/skeleton/Skeleton";
 import { formatIndianNumber } from "../../components/form/IndianAmountInput";
 import { SalaryEmployeeItem } from "./helpers";
 
@@ -16,7 +16,13 @@ export function SalarySection({ employees, setEmployees, loading, onNextMonth }:
   const [showPaid, setShowPaid] = useState(false);
 
   if (loading) {
-    return <Spinner size="sm" label="Loading unbilled employees..." className="py-4" />;
+    return (
+      <div className="py-4 space-y-3">
+        <Skeleton variant="text" className="h-12 w-full" />
+        <Skeleton variant="text" className="h-12 w-full" />
+        <Skeleton variant="text" className="h-12 w-full" />
+      </div>
+    );
   }
 
 

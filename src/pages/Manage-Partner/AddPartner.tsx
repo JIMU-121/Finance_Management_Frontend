@@ -5,13 +5,10 @@ import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import Select from "../../components/form/Select";
-
 import { showError, showSuccess } from "../../utils/toast";
 import { useNavigate } from "react-router";
-
 import { registerUser } from "../../features/users/userApi";
 import { createPartner } from "../../features/users/partnerApi";
-import Select from "../../components/form/Select";
 
 function AddPartner() {
   const navigate = useNavigate();
@@ -20,14 +17,9 @@ function AddPartner() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [sharePercentage, setSharePercentage] = useState("");
-  const [branchId, setBranchId] = useState("2"); // 👈 Fixed at 2 for Surat
-
-
+  const [branchId, setBranchId] = useState("2");
   const [loading, setLoading] = useState(false);
-
-  const branchOptions = [{ id: 1, name: "Surat" }];
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
@@ -57,13 +49,11 @@ function AddPartner() {
       await createPartner({
         userId,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: Number(branchId) || 2, // 👈 Ensures ID 2
+        branchId: Number(branchId) || 2,
         isMainPartner: false,
       });
 
-
       showSuccess("Partner added successfully 🚀");
-
       navigate("/manage-partner");
     } catch (err: any) {
       console.error(err);
@@ -84,93 +74,52 @@ function AddPartner() {
           <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
             Add New Partner
           </h2>
-
-          <Button onClick={() => navigate("/manage-partner")}>
-            Back
-          </Button>
+          <Button onClick={() => navigate("/manage-partner")}>Back</Button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <Label>First Name *</Label>
-              <Input
-                value={firstName}
-                onChange={(e: any) => setFirstName(e.target.value)}
-              />
+              <Input value={firstName} onChange={(e: any) => setFirstName(e.target.value)} />
             </div>
 
             <div>
               <Label>Last Name *</Label>
-              <Input
-                value={lastName}
-                onChange={(e: any) => setLastName(e.target.value)}
-              />
+              <Input value={lastName} onChange={(e: any) => setLastName(e.target.value)} />
             </div>
 
             <div>
               <Label>Email *</Label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e: any) => setEmail(e.target.value)}
-              />
+              <Input type="email" value={email} onChange={(e: any) => setEmail(e.target.value)} />
             </div>
 
             <div>
               <Label>Password *</Label>
               <Input type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
-              <Input
-                type="password"
-                value={password}
-                onChange={(e: any) => setPassword(e.target.value)}
-              />
             </div>
 
             <div>
               <Label>Share %</Label>
-              <Input
-                type="number"
-                value={sharePercentage}
-                onChange={(e: any) => setSharePercentage(e.target.value)}
-              />
+              <Input type="number" value={sharePercentage} onChange={(e: any) => setSharePercentage(e.target.value)} />
             </div>
 
             <div>
               <Label>Branch</Label>
-              <Select 
-                options={[{ value: "2", label: "Surat" }]} 
+              <Select
+                options={[{ value: "2", label: "Surat" }]}
                 value={branchId}
                 onChange={(val) => setBranchId(val)}
-
-              <Select
-                value={branchId}
-                onChange={(val: string) => setBranchId(val)}
-                options={branchOptions.map((branch) => ({
-                  value: String(branch.id),
-                  label: branch.name,
-                }))}
-                placeholder="Select Branch"
               />
             </div>
-
           </div>
 
           {/* Buttons */}
           <div className="flex justify-end gap-3 border-t pt-5 dark:border-gray-700">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => navigate("/manage-partner")}
-            >
+            <Button variant="outline" type="button" onClick={() => navigate("/manage-partner")}>
               Cancel
             </Button>
-
-            <Button
-              type="submit"
-              className="bg-brand-500 hover:bg-brand-600 text-white"
-              disabled={loading}
-            >
+            <Button type="submit" className="bg-brand-500 hover:bg-brand-600 text-white" disabled={loading}>
               {loading ? "Saving..." : "Save Partner"}
             </Button>
           </div>

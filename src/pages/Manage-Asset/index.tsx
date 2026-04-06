@@ -1,9 +1,6 @@
 import { useState, useEffect, JSX } from "react";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
-import Label from "../../components/form/Label";
-import Input from "../../components/form/input/InputField";
-import DatePicker from "../../components/form/date-picker";
 import Button from "../../components/ui/button/Button";
 import { showError, showSuccess } from "../../utils/toast";
 import {
@@ -18,26 +15,7 @@ import {
   ColumnDef,
   DetailField,
 } from "../../components/ui/table/DataTable";
-import Spinner from "../../components/ui/spinner/Spinner";
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const safeFormatDate = (input: string | Date | undefined | null) => {
-  if (!input) return "";
-
-  const date = new Date(input);
-
-  if (isNaN(date.getTime())) {
-    console.log("Invalid date:", input);
-    return "";
-  }
-
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
-};
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 
 // ─── DataTable config ─────────────────────────────────────────────────────────
 
@@ -97,6 +75,9 @@ const assetDetailFields: DetailField<Asset & { id: number }>[] = [
   },
 ];
 
+import { useAssetForm, safeFormatDate } from "./useAssetForm";
+import { AssetFormFields } from "./AssetFormFields";
+
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
 function EditAssetModal({
@@ -108,26 +89,16 @@ function EditAssetModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const [name, setName] = useState(asset.name);
-  const [description, setDescription] = useState(asset.description);
-  const [amount, setAmount] = useState<number | string>(
-    asset.amount ? asset.amount.toLocaleString("en-IN") : "",
-  );
-  const [purchaseDate, setPurchaseDate] = useState(() =>
-    safeFormatDate(asset.purchase_Date as unknown as string),
-  );
+  const { form, handleChange, handleAmountChange } = useAssetForm({
+    name: asset.name,
+    description: asset.description,
+    amount: asset.amount ? asset.amount.toLocaleString("en-IN") : "",
+    purchaseDate: safeFormatDate(asset.purchase_Date as unknown as string),
+  });
   const [saving, setSaving] = useState(false);
 
-  const handleAmountChange = (e: any) => {
-    let value = e.target.value;
-    value = value.replace(/,/g, "");
-    if (!/^\d*$/.test(value)) return;
-    const formatted = value ? Number(value).toLocaleString("en-IN") : "";
-    setAmount(formatted);
-  };
-
   const handleSave = async () => {
-    if (!name.trim() || !description.trim() || !amount || !purchaseDate) {
+    if (!form.name.trim() || !form.description.trim() || !form.amount || !form.purchaseDate) {
       showError("All fields are required.");
       return;
     }
@@ -135,10 +106,10 @@ function EditAssetModal({
       setSaving(true);
       await updateAsset(asset.id!, {
         id: asset.id,
-        name,
-        description,
-        amount: Number(String(amount).replace(/,/g, "")),
-        purchase_Date: purchaseDate,
+        name: form.name,
+        description: form.description,
+        amount: Number(String(form.amount).replace(/,/g, "")),
+        purchase_Date: form.purchaseDate,
       });
       showSuccess("Asset updated successfully.");
       onUpdated();
@@ -152,90 +123,25 @@ function EditAssetModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="relative z-10 mx-4 w-full max-w-lg rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900">
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-700">
           <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white">
-              Edit Asset
-            </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Updating: {asset.name}
-            </p>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white">Edit Asset</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Updating: {asset.name}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+          <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <div className="space-y-4 p-6">
-          <div>
-            <Label>Asset Name</Label>
-            <Input
-              value={name}
-              onChange={(e: any) => setName(e.target.value)}
-              placeholder="MacBook Pro"
-            />
-          </div>
-          <div>
-            <Label>Description</Label>
-            <Input
-              value={description}
-              onChange={(e: any) => setDescription(e.target.value)}
-              placeholder="Laptop for development"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Amount</Label>
-              <Input
-                type="text"
-                value={amount}
-                onChange={handleAmountChange}
-                placeholder="e.g. 2,00,000"
-              />
-            </div>
-            <div>
-              <DatePicker
-                id={`edit-asset-purchase-date-${asset.id}`}
-                label="Purchase Date"
-                placeholder="Select date"
-                defaultDate={purchaseDate}
-                onChange={(dates) => {
-                  if (dates && dates.length > 0) {
-                    setPurchaseDate(safeFormatDate(dates[0]));
-                  }
-                }}
-              />
-            </div>
-          </div>
+        <div className="p-6">
+          <AssetFormFields form={form} handleChange={handleChange} handleAmountChange={handleAmountChange} isEdit={true} />
         </div>
-        <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 px-6 py-5 dark:border-gray-800">
+        <div className="flex justify-end gap-3 border-t border-gray-100 px-6 py-5 dark:border-gray-800">
           <Button variant="outline" onClick={onClose} className="px-5 py-2">
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 shadow-theme-xs transition-colors"
-            disabled={saving}
-          >
+          <Button onClick={handleSave} className="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2 shadow-theme-xs transition-colors" disabled={saving}>
             {saving ? "Saving..." : "Save Changes"}
           </Button>
         </div>
@@ -251,38 +157,26 @@ export function AddAssetForm({
 }: {
   onAdded: (assetId?: number) => void;
 }) {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [amount, setAmount] = useState<number | string>("");
-  const [purchaseDate, setPurchaseDate] = useState("");
+  const { form, handleChange, handleAmountChange, clearForm } = useAssetForm();
   const [submitting, setSubmitting] = useState(false);
-
-
-
-  const clearInput = () => {
-    setName("");
-    setDescription("");
-    setAmount("");
-    setPurchaseDate("");
-  };
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || !amount || !purchaseDate) {
+    if (!form.name || !form.description || !form.amount || !form.purchaseDate) {
       showError("Please fill in all required fields.");
       return;
     }
     try {
       setSubmitting(true);
       const createdAsset = await createAsset({
-        name,
-        description,
-        amount: Number(String(amount).replace(/,/g, "")),
-        purchase_Date: purchaseDate,
+        name: form.name,
+        description: form.description,
+        amount: Number(String(form.amount).replace(/,/g, "")),
+        purchase_Date: form.purchaseDate,
       });
 
       showSuccess("Asset added successfully.");
-      clearInput();
+      clearForm();
       onAdded(createdAsset.id);
     } catch (err: any) {
       showError(err?.response?.data?.message || "Adding asset failed.");
@@ -295,82 +189,17 @@ export function AddAssetForm({
     <form onSubmit={handleAdd} className="space-y-6">
       <div className="rounded-xl border border-gray-200 bg-gray-50/50 p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900/50">
         <div className="mb-8 border-b border-gray-200 pb-4 dark:border-gray-800">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-            Asset Information
-          </h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Provide the necessary details to register a new asset into the
-            system.
-          </p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">Asset Information</h3>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Provide the necessary details to register a new asset into the system.</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="md:col-span-2">
-            <Label>
-              Asset Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="text"
-              value={name}
-              onChange={(e: any) => setName(e.target.value)}
-              placeholder="e.g. Dell UltraSharp 27-inch Monitor"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <Label>
-              Description <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="text"
-              value={description}
-              onChange={(e: any) => setDescription(e.target.value)}
-              placeholder="e.g. 4K USB-C Hub Monitor for design team"
-            />
-          </div>
-
-          <div>
-            <Label>
-              Amount (₹) <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              type="number"
-              value={amount}
-              onChange={(e: any) => setAmount(e.target.value)}
-              placeholder="e.g. 500"
-            />
-          </div>
-
-          <div>
-            <DatePicker
-              id="asset-purchase-date"
-              label="Purchase Date *"
-              placeholder="Select date"
-              onChange={(dates) => {
-                if (dates && dates.length > 0) {
-                  setPurchaseDate(safeFormatDate(dates[0]));
-                } else {
-                  setPurchaseDate("");
-                }
-              }}
-            />
-          </div>
-        </div>
+        <AssetFormFields form={form} handleChange={handleChange} handleAmountChange={handleAmountChange} />
 
         <div className="mt-8 flex gap-4 pt-4">
-          <Button
-            type="submit"
-            disabled={submitting}
-            className="bg-brand-500 hover:bg-brand-600 px-6 py-2.5 text-white shadow-theme-xs transition-colors"
-          >
+          <Button type="submit" disabled={submitting} className="bg-brand-500 hover:bg-brand-600 px-6 py-2.5 text-white shadow-theme-xs transition-colors">
             {submitting ? "Registering..." : "Register Asset"}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={clearInput}
-            className="px-6 py-2.5"
-          >
+          <Button type="button" variant="outline" onClick={clearForm} className="px-6 py-2.5">
             Clear Form
           </Button>
         </div>
@@ -497,11 +326,9 @@ export default function ManageAsset() {
           {activeTab === "view" && (
             <>
               {loadingAssets ? (
-                <Spinner
-                  size="md"
-                  label="Loading assets..."
-                  className="py-16"
-                />
+                <div className="py-8">
+                  <TableSkeleton columns={4} rows={5} />
+                </div>
               ) : (
                 <DataTable
                   data={assets}

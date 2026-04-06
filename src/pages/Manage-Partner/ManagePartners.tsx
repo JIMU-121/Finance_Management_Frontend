@@ -6,7 +6,6 @@ import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 import Select from "../../components/form/Select";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
-
 import { showError, showSuccess } from "../../utils/toast";
 import { deleteUser } from "../../features/users/userApi";
 import {
@@ -14,9 +13,8 @@ import {
   ColumnDef,
   DetailField,
 } from "../../components/ui/table/DataTable";
-import Spinner from "../../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 import { usePagination } from "../../hooks/usePagination";
-import Select from "../../components/form/Select";
 import {
   getAllPartners,
   createPartner,
@@ -28,11 +26,9 @@ import { useNavigate } from "react-router";
 // ─── Types and Constants ──────────────────────────────────────────────────────
 
 type PartnerUser = Partner & {
-  id: number; // Required for DataTable
+  id: number;
   _isPartnerCreated?: boolean;
 };
-
-// ─── DataTable config ─────────────────────────────────────────────────────────
 
 const branchMap: Record<number, string> = {
   1: "Surat",
@@ -70,39 +66,11 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
       </span>
     ),
   },
-  
-
   {
     header: "Share (%)",
-
     render: (row) => (
       <span className="whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
         {row.sharePercentage ? `${row.sharePercentage}%` : "—"}
-      </span>
-    ),
-  },
-  {
-    header: "Branch",
-    render: (row) => (
-      <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
-        {row.branchId ? `Branch #${row.branchId}` : "—"}
-      </span>
-    ),
-  },
-  {
-    header: "Status",
-    render: () => (
-      <span
-        className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
-      >
-        Created
-        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-          row._isPartnerCreated
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-        }`}
-      >
-        {row._isPartnerCreated ? "Created" : "Pending"}
       </span>
     ),
   },
@@ -117,17 +85,26 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
       );
     },
   },
+  {
+    header: "Status",
+    render: (row) => (
+      <span
+        className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+          row._isPartnerCreated
+            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+            : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+        }`}
+      >
+        {row._isPartnerCreated ? "Created" : "Pending"}
+      </span>
+    ),
+  },
 ];
 
 const partnerDetailFields: DetailField<PartnerUser>[] = [
   { label: "First Name", render: (r) => r.user?.firstName ?? "—" },
   { label: "Last Name", render: (r) => r.user?.lastName ?? "—" },
   { label: "Email", render: (r) => r.user?.email ?? "—" },
-  {
-    label: "Share Percentage",
-
-    render: (r) =>
-      r.sharePercentage ? `${r.sharePercentage}%` : "—",
   {
     label: "Partnership Type",
     render: (r) => r.partnershipType || "—",
@@ -142,8 +119,6 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   },
   {
     label: "Is Main Partner",
-    render: (r) =>
-      r.isMainPartner ? "Yes" : "No",
     render: (r) => (r.isMainPartner ? "Yes" : "No"),
   },
   { label: "User ID", render: (r) => r.userId },
@@ -167,8 +142,6 @@ function EditPartnerModal({
   const [showPassword, setShowPassword] = useState(false);
 
   // Partner fields
-  const [sharePercentage, setSharePercentage] = useState<number | string>(
-
   const [partnershipType, setPartnershipType] = useState(
     partner.partnershipType || "",
   );
@@ -196,10 +169,9 @@ function EditPartnerModal({
         userId: partner.userId,
         partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: branchId ? Number(branchId) : 2, // 👈 Ensures ID 2
+        branchId: branchId ? Number(branchId) : 2,
         isMainPartner,
       };
-
 
       if (partner.id) {
         await updatePartner(partner.id, partnerData);
@@ -357,7 +329,6 @@ function EditPartnerModal({
               </label>
             </div>
           </div>
-
         </div>
         {/* Footer */}
         <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
@@ -378,29 +349,21 @@ function EditPartnerModal({
 }
 
 export default function ManagePartners() {
-  const [registeredPartners, setRegisteredPartners] = useState<PartnerUser[]>(
-    [],
-  );
+  const [registeredPartners, setRegisteredPartners] = useState<PartnerUser[]>([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [editPartner, setEditPartner] = useState<PartnerUser | null>(null);
-  const [activeTab, setActiveTab] = useState("registered");
   const navigate = useNavigate();
 
-  // Pagination hook
-  const { pageNumber, pageSize, setTotalItems, paginationProps } =
-    usePagination();
+  const { pageNumber, pageSize, setTotalItems, paginationProps } = usePagination();
 
-  // ── Fetch partners ──────────────────────────────────────────────────────────────
   const fetchPartners = async () => {
     try {
       setLoadingPartners(true);
       const data = await getAllPartners();
-
       const partners = (data || []).map((p: any) => ({
         ...p,
         _isPartnerCreated: true,
       })) as PartnerUser[];
-
       setRegisteredPartners(partners);
       setTotalItems(partners.length);
     } catch (err) {
@@ -413,10 +376,8 @@ export default function ManagePartners() {
 
   useEffect(() => {
     fetchPartners();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageNumber, pageSize]);
 
-  // ── Delete partner ──────────────────────────────────────────────────────────────
   const handleDelete = async (id: number) => {
     try {
       await deleteUser(id);
@@ -428,46 +389,25 @@ export default function ManagePartners() {
     }
   };
 
-  // ── Tab switch ───────────────────────────────────────────────────────────────
   const tabs = [
-      {
-        key: "registered",
-        label: "Registered Partners",
-        icon: (
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
-            />
-          </svg>
-        ),
-      },
-    ];
-
-  function handleRegisterUser() {
-    navigate("/manage-partner/register");
-  }
+    {
+      key: "registered",
+      label: "Registered Partners",
+      icon: (
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" />
+        </svg>
+      ),
+    },
+  ];
 
   return (
     <div>
-      <PageMeta
-        title="Manage Partners"
-        description="Partner Management Dashboard"
-      />
+      <PageMeta title="Manage Partners" description="Partner Management Dashboard" />
       <PageBreadcrumb pageTitle="Manage Partners" />
-
       <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03]">
-        {/* ── Tab header ── */}
         <div className="border-b border-gray-200 px-5 pt-5 dark:border-gray-700">
           <div className="flex items-center justify-between">
-            {/* Left - Tabs */}
             <div className="flex items-center gap-1">
               {tabs.map((tab) => (
                 <button
@@ -479,25 +419,19 @@ export default function ManagePartners() {
                 </button>
               ))}
             </div>
-
-            {/* Right - Add Button */}
             <button
-              onClick={handleRegisterUser}
+              onClick={() => navigate("/manage-partner/register")}
               className="bg-brand-500 m-2 hover:bg-brand-600 text-white px-5 py-2 rounded-lg"
             >
               + Add Partner
             </button>
           </div>
         </div>
-
-        {/* ── Tab content ── */}
         <div className="p-6">
           {loadingPartners ? (
-            <Spinner
-              size="md"
-              label="Loading partners..."
-              className="py-16"
-            />
+            <div className="py-8">
+              <TableSkeleton columns={5} rows={5} />
+            </div>
           ) : (
             <DataTable
               data={registeredPartners}
@@ -505,9 +439,7 @@ export default function ManagePartners() {
               detailFields={partnerDetailFields}
               onDelete={handleDelete}
               onEdit={(row) => setEditPartner(row)}
-              searchKeys={[
-                "partnershipType",
-              ]}
+              searchKeys={["partnershipType"]}
               searchPlaceholder="Search registered partners..."
               title="Registered Firm Partners"
               pagination={paginationProps}
@@ -515,8 +447,6 @@ export default function ManagePartners() {
           )}
         </div>
       </div>
-
-      {/* ── Edit Modal ── */}
       {editPartner && (
         <EditPartnerModal
           partner={editPartner}

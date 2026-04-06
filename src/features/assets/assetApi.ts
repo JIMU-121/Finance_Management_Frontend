@@ -7,10 +7,7 @@ export const getAllAssets = async (): Promise<Asset[]> => {
   return response?.data || response || [];
 };
 
-export const getAssetById = async (id: number): Promise<Asset> => {
-  const response = await apiService.get<any>(API_ENDPOINTS.ASSET.GET_BY_ID(id));
-  return response?.data || response;
-};
+
 
 export const createAsset = async (data: Asset): Promise<Asset> => {
   const response = await apiService.post<any>(API_ENDPOINTS.ASSET.CREATE, data);

@@ -4,7 +4,7 @@ import { DocType } from "../../types/apiTypes";
 import { uploadEmployeeDocument } from "../../features/employees/employeeDocumentApi";
 import { getAllDocTypes } from "../../features/docTypes/docTypeApi";
 import { showError, showSuccess } from "../../utils/toast";
-import Spinner from "../ui/spinner/Spinner";
+import Skeleton from "../ui/skeleton/Skeleton";
 
 interface UploadDocumentModalProps {
   employeeId: number;
@@ -68,8 +68,10 @@ const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
     >
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900/50 min-h-[200px] flex flex-col justify-center">
         {loading ? (
-          <div className="py-12 flex justify-center">
-            <Spinner size="md" label="Loading document types..." />
+          <div className="py-12 px-6 flex flex-col gap-4">
+            <Skeleton variant="text" className="h-10 w-full" />
+            <Skeleton variant="text" className="h-10 w-full" />
+            <Skeleton variant="text" className="h-10 w-full" />
           </div>
         ) : (
           <table className="w-full text-left border-collapse">

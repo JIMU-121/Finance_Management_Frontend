@@ -10,10 +10,7 @@ export const getAllExpenseCategories = async (): Promise<ExpenseCategory[]> => {
   return [];
 };
 
-export const getExpenseCategoryById = async (id: number): Promise<ExpenseCategory> => {
-  const response = await axiosInstance.get<ApiResponse<ExpenseCategory>>(API_ENDPOINTS.CATEGORY.GET_BY_ID(id));
-  return response.data.data;
-};
+
 
 export const createExpenseCategory = async (payload: Omit<ExpenseCategory, "id">): Promise<ExpenseCategory> => {
   const response = await axiosInstance.post<any>(API_ENDPOINTS.CATEGORY.CREATE, payload);

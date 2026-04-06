@@ -11,7 +11,7 @@ import { Expense, Asset, ExpenseCategory } from "../../types/apiTypes";
 import { getAllAssets } from "../../features/assets/assetApi";
 import { getAllUsers, User } from "../../features/users/userApi";
 import { getPartnerByUserId } from "../../features/users/partnerApi";
-import Spinner from "../../components/ui/spinner/Spinner";
+import Skeleton from "../../components/ui/skeleton/Skeleton";
 import Button from "../../components/ui/button/Button";
 
 export default function AddExpensePage() {
@@ -85,8 +85,9 @@ export default function AddExpensePage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <Spinner size="lg" label="Loading required data..." />
+      <div className="flex flex-col gap-4 p-8 min-h-[400px]">
+        <Skeleton variant="text" className="h-12 w-full" />
+        <Skeleton variant="text" className="h-64 w-full" />
       </div>
     );
   }

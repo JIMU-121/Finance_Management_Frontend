@@ -36,16 +36,7 @@ export const getAllProfiles = async (): Promise<ProfileDto[]> => {
   return [];
 };
 
-// GET profile by id
-export const getProfileById = async (id: number): Promise<ProfileDto> => {
-  const res = await apiService.get<any>(`/api/Profile/${id}`);
-  // Handle wrapped response
-  if (res?.data && typeof res.data === 'object') {
-    return res.data as ProfileDto;
-  }
-  // Direct response
-  return res as ProfileDto;
-};
+
 
 // POST create profile
 export const createProfile = async (dto: CreateProfileDto): Promise<ProfileDto> => {
@@ -57,14 +48,4 @@ export const createProfile = async (dto: CreateProfileDto): Promise<ProfileDto> 
   // Direct response
   return res as ProfileDto;
 };
-
-// PUT update profile
-export const updateProfile = async (id: number, dto: UpdateProfileDto): Promise<ProfileDto> => {
-  const res = await apiService.put(`/api/Profile/${id}`, dto);
-  return res;
-};
-
-// DELETE profile
-export const deleteProfile = async (id: number): Promise<void> => {
-  await apiService.delete(`/api/Profile/${id}`);
-};
+

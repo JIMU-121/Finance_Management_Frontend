@@ -3,7 +3,7 @@ import { DataTable, ColumnDef, DetailField } from "../../components/ui/table/Dat
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import { showSuccess, showError } from "../../utils/toast";
-import Spinner from "../../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../../components/ui/skeleton/TableSkeleton";
 import { ModalShell } from "../../components/ui/modal/ModalShell";
 import StatusBadge from "../../components/ui/badge/StatusBadge";
 import InitialAvatar from "../../components/ui/avatar/InitialAvatar";
@@ -458,7 +458,9 @@ export default function ViewProjectTable() {
   return (
     <>
       {loading ? (
-        <Spinner size="md" label="Loading projects..." className="py-16" />
+        <div className="py-8 bg-white border border-gray-200 rounded-2xl dark:bg-white/[0.03] dark:border-gray-800 p-6">
+          <TableSkeleton columns={5} rows={5} />
+        </div>
       ) : (
         <DataTable
           data={projects}

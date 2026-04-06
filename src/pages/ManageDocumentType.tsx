@@ -17,7 +17,7 @@ import {
   ColumnDef,
   DetailField,
 } from "../components/ui/table/DataTable";
-import Spinner from "../components/ui/spinner/Spinner";
+import { TableSkeleton } from "../components/ui/skeleton/TableSkeleton";
 import { PageTab } from "../components/ui/tabs/PageTabs";
 import { ModalShell } from "../components/ui/modal/ModalShell";
 
@@ -293,11 +293,9 @@ export default function ManageDocumentType() {
           {activeTab === "view" && (
             <>
               {loading ? (
-                <Spinner
-                  size="md"
-                  label="Loading DocTypes..."
-                  className="py-16"
-                />
+                <div className="py-8">
+                  <TableSkeleton columns={3} rows={5} />
+                </div>
               ) : (
                 <DataTable
                   data={docTypes}
