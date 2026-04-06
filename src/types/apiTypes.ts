@@ -100,7 +100,7 @@ export interface PatchUserPayload {
 export interface Partner {
   id?: number;
   userId: number;
-  partnershipType: string;
+  partnershipType?: string;
   sharePercentage: number;
   branchId?: number;
   isMainPartner: boolean;
@@ -277,4 +277,25 @@ export interface UploadDocumentPayload {
   employeeId: number;
   docType_Id: number;
   file: File;
+}
+
+// Financial Models
+export interface PartnerIncome {
+  partnerId: number;
+  partnerName: string;
+  expectedIncome: number;
+  actualIncome: number;
+  settlementAmount: number;
+  projectsManaged: number;
+}
+
+export interface MonthlyReport {
+  month: number;
+  year: number;
+  totalIncome: number;
+  totalExpenses: number;
+  totalSalaries: number;
+  netIncome: number;
+  partnerIncomes: PartnerIncome[];
+  expenses: Expense[];
 }

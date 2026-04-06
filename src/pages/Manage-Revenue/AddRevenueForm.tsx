@@ -5,7 +5,6 @@ import { getAllPartners } from "../../features/users/partnerApi";
 import { getAllProjects } from "../../features/projects/projectAPI";
 import Label from "../../components/form/Label";
 import LazySelect from "../../components/form/LazySelect";
-import Select from "../../components/form/Select";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
 

@@ -162,7 +162,19 @@ export function AddExpenseForm({
     }
   };
 
+  const goToNextMonth = () => {
+    const d = new Date(selectedDate || todayStr);
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(1); // Set to 1st of next month
+    const newDateStr = safeFormatDate(d);
+    setSelectedDate(newDateStr);
+    
+    // We also need to trigger any components that rely on the date directly
+    // If the DatePicker is controlled, it should update.
+  };
+
   const clearForm = () => {
+
     setSelectedCategory(null);
     setSelectedDate(todayStr);
     setAmountRaw("");
@@ -288,9 +300,10 @@ export function AddExpenseForm({
         <div>
           <DatePicker
             id="add-expense-date"
+            key={selectedDate} // Forced re-render when date changes programmatically
             label="Date *"
             placeholder="Select date"
-            defaultDate={todayStr}
+            defaultDate={selectedDate}
             error={!!errors.date}
             hint={errors.date}
             onChange={(dates) => {
@@ -301,6 +314,7 @@ export function AddExpenseForm({
             }}
           />
         </div>
+
 
         <div>
           <Label>Partner *</Label>
@@ -373,12 +387,14 @@ export function AddExpenseForm({
               employees={salaryEmployees}
               setEmployees={setSalaryEmployees}
               loading={loadingSalary}
+              onNextMonth={goToNextMonth}
             />
             {errors.salaryEmployees && (
               <p className="mt-1.5 text-xs text-error-500">{errors.salaryEmployees}</p>
             )}
           </div>
         )}
+
 
         <div>
           <Label>

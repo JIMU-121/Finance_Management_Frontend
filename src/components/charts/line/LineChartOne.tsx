@@ -1,14 +1,24 @@
 import Chart from "react-apexcharts";
 import { ApexOptions } from "apexcharts";
+import { useDashboardData } from "../../../hooks/useDashboardData";
 
-export default function LineChartOne() {
+interface LineChartProps {
+  activeTab?: string;
+}
+
+export default function LineChartOne({ activeTab = "Overview" }: LineChartProps) {
   const options: ApexOptions = {
     legend: {
-      show: false, // Hide legend
+      show: true, // Hide legend
       position: "top",
       horizontalAlign: "left",
     },
-    colors: ["#465FFF", "#9CB9FF"], // Define line colors
+    colors:
+      activeTab === "Overview"
+        ? ["#10B981", "#EF4444"]
+        : activeTab === "Expense"
+          ? ["#EF4444"]
+          : ["#10B981"], // Dynamic colors based on active tab
     chart: {
       fontFamily: "Outfit, sans-serif",
       height: 310,
@@ -18,15 +28,17 @@ export default function LineChartOne() {
       },
     },
     stroke: {
-      curve: "straight", // Define the line style (straight, smooth, or step)
-      width: [2, 2], // Line width for each dataset
+      curve: "smooth", // Smooth curves like the mockup
+      width: [2, 2], // Line width
     },
 
     fill: {
       type: "gradient",
       gradient: {
-        opacityFrom: 0.55,
-        opacityTo: 0,
+        shadeIntensity: 1,
+        opacityFrom: 0.15,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
       },
     },
     markers: {
@@ -100,16 +112,23 @@ export default function LineChartOne() {
     },
   };
 
+  const { monthlyRevenue, monthlyExpense } = useDashboardData();
+
   const series = [
     {
-      name: "Sales",
-      data: [180, 190, 170, 160, 175, 165, 170, 205, 230, 210, 240, 235],
+      name: "Revenue",
+      data: monthlyRevenue,
     },
     {
-      name: "Revenue",
-      data: [40, 30, 50, 40, 55, 40, 70, 100, 110, 120, 150, 140],
+      name: "Expense",
+      data: monthlyExpense,
     },
-  ];
+  ].filter(s => {
+    if (activeTab === "Overview") return true;
+    if (activeTab === "Expense") return s.name === "Expense";
+    if (activeTab === "Revenue") return s.name === "Revenue";
+    return true;
+  });
   return (
     <div className="max-w-full overflow-x-auto custom-scrollbar">
       <div id="chartEight" className="min-w-[1000px]">

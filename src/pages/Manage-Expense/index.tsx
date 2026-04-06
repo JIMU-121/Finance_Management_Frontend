@@ -23,7 +23,6 @@ import { getExpenseColumns, getExpenseDetailFields } from "./expenseTableConfig"
 export default function ManageExpense() {
   const [expenses, setExpenses] = useState<(Expense & { id: number })[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false);
   const [editExpense, setEditExpense] = useState<(Expense & { id: number }) | null>(null);
   const [currentPartnerId, setCurrentPartnerId] = useState<number | null>(null);
 

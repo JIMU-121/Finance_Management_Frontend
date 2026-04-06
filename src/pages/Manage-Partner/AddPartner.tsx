@@ -4,6 +4,8 @@ import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import Select from "../../components/form/Select";
+
 import { showError, showSuccess } from "../../utils/toast";
 import { useNavigate } from "react-router";
 
@@ -18,9 +20,9 @@ function AddPartner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [partnershipType, setPartnershipType] = useState("");
   const [sharePercentage, setSharePercentage] = useState("");
-  const [branchId, setBranchId] = useState("");
+  const [branchId, setBranchId] = useState("2"); // 👈 Fixed at 2 for Surat
+
 
   const [loading, setLoading] = useState(false);
 
@@ -57,11 +59,11 @@ function AddPartner() {
       // ✅ Step 2: Create Partner
       await createPartner({
         userId,
-        partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: Number(branchId) || 1,
+        branchId: Number(branchId) || 2, // 👈 Ensures ID 2
         isMainPartner: false,
       });
+
 
       showSuccess("Partner added successfully 🚀");
 
@@ -118,19 +120,20 @@ function AddPartner() {
             </div>
 
             <div>
-              <Label>Partnership Type</Label>
-              <Input value={partnershipType} onChange={(e: any) => setPartnershipType(e.target.value)} />
-            </div>
-
-            <div>
               <Label>Share %</Label>
               <Input type="number" value={sharePercentage} onChange={(e: any) => setSharePercentage(e.target.value)} />
             </div>
 
             <div>
-              <Label>Branch ID</Label>
-              <Input type="number" value={branchId} onChange={(e: any) => setBranchId(e.target.value)} />
+              <Label>Branch</Label>
+              <Select 
+                options={[{ value: "2", label: "Surat" }]} 
+                value={branchId}
+                onChange={(val) => setBranchId(val)}
+                placeholder="Select Branch"
+              />
             </div>
+
           </div>
 
           {/* Buttons */}

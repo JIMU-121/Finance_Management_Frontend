@@ -4,7 +4,9 @@ import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import Select from "../../components/form/Select";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
+
 import { showError, showSuccess } from "../../utils/toast";
 import { deleteUser } from "../../features/users/userApi";
 import {
@@ -62,15 +64,8 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     ),
   },
   {
-    header: "Partnership Type",
-    render: (row) => (
-      <span className="whitespace-nowrap text-gray-600 dark:text-gray-300 capitalize">
-        {row.partnershipType || "—"}
-      </span>
-    ),
-  },
-  {
     header: "Share (%)",
+
     render: (row) => (
       <span className="whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
         {row.sharePercentage ? `${row.sharePercentage}%` : "—"}
@@ -102,11 +97,8 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   { label: "Last Name", render: (r) => r.user?.lastName ?? "—" },
   { label: "Email", render: (r) => r.user?.email ?? "—" },
   {
-    label: "Partnership Type",
-    render: (r) => r.partnershipType || "—",
-  },
-  {
     label: "Share Percentage",
+
     render: (r) =>
       r.sharePercentage ? `${r.sharePercentage}%` : "—",
   },
@@ -140,10 +132,8 @@ function EditPartnerModal({
   const [showPassword, setShowPassword] = useState(false);
 
   // Partner fields
-  const [partnershipType, setPartnershipType] = useState(
-    partner.partnershipType || "",
-  );
   const [sharePercentage, setSharePercentage] = useState<number | string>(
+
     partner.sharePercentage || "",
   );
   const [branchId, setBranchId] = useState<number | string>(
@@ -165,11 +155,11 @@ function EditPartnerModal({
 
       const partnerData: Partner = {
         userId: partner.userId,
-        partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: branchId ? Number(branchId) : 1,
+        branchId: branchId ? Number(branchId) : 2, // 👈 Ensures ID 2
         isMainPartner,
       };
+
 
       if (partner.id) {
         await updatePartner(partner.id, partnerData);
@@ -287,14 +277,6 @@ function EditPartnerModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Partnership Type</Label>
-              <Input
-                value={partnershipType}
-                onChange={(e: any) => setPartnershipType(e.target.value)}
-                placeholder="e.g. LLC, General"
-              />
-            </div>
-            <div>
               <Label>Share Percentage (%)</Label>
               <Input
                 type="number"
@@ -307,12 +289,12 @@ function EditPartnerModal({
               />
             </div>
             <div>
-              <Label>Branch ID</Label>
-              <Input
-                type="number"
-                value={branchId}
-                onChange={(e: any) => setBranchId(e.target.value)}
-                placeholder="1"
+              <Label>Branch</Label>
+              <Select
+                options={[{ value: "2", label: "Surat" }]}
+                value={String(branchId)}
+                onChange={(val) => setBranchId(val)}
+                placeholder="Select Branch"
               />
             </div>
             <div className="flex items-center pt-8">
@@ -335,6 +317,7 @@ function EditPartnerModal({
               </label>
             </div>
           </div>
+
         </div>
         {/* Footer */}
         <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
