@@ -4,7 +4,9 @@ import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import Select from "../../components/form/Select";
 import { EyeCloseIcon, EyeIcon } from "../../icons";
+
 import { showError, showSuccess } from "../../utils/toast";
 import { deleteUser } from "../../features/users/userApi";
 import {
@@ -72,6 +74,7 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
 
   {
     header: "Share (%)",
+
     render: (row) => (
       <span className="whitespace-nowrap font-medium text-gray-800 dark:text-gray-200">
         {row.sharePercentage ? `${row.sharePercentage}%` : "—"}
@@ -79,9 +82,20 @@ const partnerColumns: ColumnDef<PartnerUser>[] = [
     ),
   },
   {
-    header: "Status",
+    header: "Branch",
     render: (row) => (
+      <span className="whitespace-nowrap text-gray-600 dark:text-gray-300">
+        {row.branchId ? `Branch #${row.branchId}` : "—"}
+      </span>
+    ),
+  },
+  {
+    header: "Status",
+    render: () => (
       <span
+        className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400"
+      >
+        Created
         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
           row._isPartnerCreated
             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
@@ -110,6 +124,11 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   { label: "Last Name", render: (r) => r.user?.lastName ?? "—" },
   { label: "Email", render: (r) => r.user?.email ?? "—" },
   {
+    label: "Share Percentage",
+
+    render: (r) =>
+      r.sharePercentage ? `${r.sharePercentage}%` : "—",
+  {
     label: "Partnership Type",
     render: (r) => r.partnershipType || "—",
   },
@@ -123,6 +142,8 @@ const partnerDetailFields: DetailField<PartnerUser>[] = [
   },
   {
     label: "Is Main Partner",
+    render: (r) =>
+      r.isMainPartner ? "Yes" : "No",
     render: (r) => (r.isMainPartner ? "Yes" : "No"),
   },
   { label: "User ID", render: (r) => r.userId },
@@ -146,6 +167,8 @@ function EditPartnerModal({
   const [showPassword, setShowPassword] = useState(false);
 
   // Partner fields
+  const [sharePercentage, setSharePercentage] = useState<number | string>(
+
   const [partnershipType, setPartnershipType] = useState(
     partner.partnershipType || "",
   );
@@ -173,9 +196,10 @@ function EditPartnerModal({
         userId: partner.userId,
         partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: branchId ? Number(branchId) : 1,
+        branchId: branchId ? Number(branchId) : 2, // 👈 Ensures ID 2
         isMainPartner,
       };
+
 
       if (partner.id) {
         await updatePartner(partner.id, partnerData);
@@ -293,14 +317,6 @@ function EditPartnerModal({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Partnership Type</Label>
-              <Input
-                value={partnershipType}
-                onChange={(e: any) => setPartnershipType(e.target.value)}
-                placeholder="e.g. LLC, General"
-              />
-            </div>
-            <div>
               <Label>Share Percentage (%)</Label>
               <Input
                 type="number"
@@ -313,12 +329,12 @@ function EditPartnerModal({
               />
             </div>
             <div>
-              <Label>Branch ID</Label>
-              <Input
-                type="number"
-                value={branchId}
-                onChange={(e: any) => setBranchId(e.target.value)}
-                placeholder="1"
+              <Label>Branch</Label>
+              <Select
+                options={[{ value: "2", label: "Surat" }]}
+                value={String(branchId)}
+                onChange={(val) => setBranchId(val)}
+                placeholder="Select Branch"
               />
             </div>
             <div className="flex items-center pt-8">
@@ -341,6 +357,7 @@ function EditPartnerModal({
               </label>
             </div>
           </div>
+
         </div>
         {/* Footer */}
         <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700">
@@ -413,26 +430,26 @@ export default function ManagePartners() {
 
   // ── Tab switch ───────────────────────────────────────────────────────────────
   const tabs = [
-    {
-      key: "registered",
-      label: "Registered Partners",
-      icon: (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
-          />
-        </svg>
-      ),
-    },
-  ];
+      {
+        key: "registered",
+        label: "Registered Partners",
+        icon: (
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+            />
+          </svg>
+        ),
+      },
+    ];
 
   function handleRegisterUser() {
     navigate("/manage-partner/register");
@@ -455,12 +472,7 @@ export default function ManagePartners() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className={`flex items-center gap-2 rounded-t-lg px-4 py-2.5 text-sm font-medium transition-all ${
-                    activeTab === tab.key
-                      ? "border-b-2 border-blue-600 text-blue-600 dark:text-blue-400"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
+                  className="flex items-center gap-2 border-b-2 border-blue-600 px-4 py-2.5 text-sm font-medium text-blue-600 transition-all dark:text-blue-400"
                 >
                   {tab.icon}
                   {tab.label}
@@ -481,7 +493,11 @@ export default function ManagePartners() {
         {/* ── Tab content ── */}
         <div className="p-6">
           {loadingPartners ? (
-            <Spinner size="md" label="Loading partners..." className="py-16" />
+            <Spinner
+              size="md"
+              label="Loading partners..."
+              className="py-16"
+            />
           ) : (
             <DataTable
               data={registeredPartners}
@@ -489,7 +505,9 @@ export default function ManagePartners() {
               detailFields={partnerDetailFields}
               onDelete={handleDelete}
               onEdit={(row) => setEditPartner(row)}
-              searchKeys={["partnershipType"]}
+              searchKeys={[
+                "partnershipType",
+              ]}
               searchPlaceholder="Search registered partners..."
               title="Registered Firm Partners"
               pagination={paginationProps}

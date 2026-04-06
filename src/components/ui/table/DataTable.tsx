@@ -67,6 +67,9 @@ export function DataTable<T extends { id: number }>({
   // ── Sort ──────────────────────────────────────────────────────────────────
   const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
 
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  const sortedData = [...data].sort((a, b) => (b.id || 0) - (a.id || 0));
+
   // ── Filter ──────────────────────────────────────────────────────────────────
   const filtered = sortedData.filter((row) => {
     if (!search) return true;
@@ -171,7 +174,9 @@ export function DataTable<T extends { id: number }>({
         </div>
 
         {/* ── Table ── */}
-        <div className="overflow-x-auto overflow-y-auto max-h-[60vh]">
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh] sm:max-h-[600px] lg:max-h-[700px] custom-scrollbar no-scrollbar">
+
+
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">

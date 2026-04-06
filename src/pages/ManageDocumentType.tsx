@@ -24,12 +24,6 @@ import { ModalShell } from "../components/ui/modal/ModalShell";
 // ─── DataTable config ─────────────────────────────────────────────────────────
 
 const docTypeColumns: ColumnDef<DocType & { id: number }>[] = [
-  // {
-  //   header: "ID",
-  //   render: (row) => (
-  //     <span className="text-gray-600 dark:text-gray-300">{row.id}</span>
-  //   ),
-  // },
   {
     header: "Document Type",
     render: (row) => (
@@ -103,7 +97,7 @@ function EditDocTypeModal({
 export function AddDocTypeForm({ onAdded }: { onAdded: () => void }) {
   const [typeName, setTypeName] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
+  debugger;
   const clearInput = () => setTypeName("");
 
   const handleAdd = async (e: React.FormEvent) => {

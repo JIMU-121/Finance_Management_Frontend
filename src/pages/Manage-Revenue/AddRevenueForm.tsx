@@ -1,5 +1,4 @@
-import React, { useCallback, useState } from "react";
-import { Project } from "../../types/apiTypes";
+import { useState, useCallback } from "react";
 import { showError, showSuccess } from "../../utils/toast";
 import { createRevenue } from "../../features/revenue/revenueApi";
 import { getAllPartners } from "../../features/users/partnerApi";
@@ -33,20 +32,17 @@ export function AddRevenueForm({
     }));
   }, []);
 
-const loadProjects = useCallback(async () => {
-  const res = await getAllProjects();
-  const projectsData = (res as any).data || res || [];
-
-  setProjects(projectsData); 
-
-  return [
-    { value: "0", label: "None" },
-    ...projectsData.map((p: any) => ({
-      value: String(p.id),
-      label: p.name,
-    })),
-  ];
-}, []);
+  const loadProjects = useCallback(async () => {
+    const res = await getAllProjects();
+    const projects = (res as any).data || res || [];
+    return [
+      { value: "0", label: "None" },
+      ...projects.map((p: any) => ({
+        value: String(p.id),
+        label: p.name,
+      }))
+    ];
+  }, []);
 
   const handleAmountChange = (e: any) => {
     let value = e.target.value;
@@ -140,7 +136,7 @@ const loadProjects = useCallback(async () => {
             <LazySelect
               loadOptions={loadProjects}
               value={String(projectId || "0")}
-              onChange={handleProjectChange}
+              onChange={(val) => setProjectId(val === "0" ? null : Number(val))}
               placeholder="Select Project"
             />
           </div>

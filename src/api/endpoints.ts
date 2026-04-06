@@ -98,4 +98,7 @@ export const API_ENDPOINTS = {
     UPDATE: (id: number) => `${API_PREFIX}/Category/${id}`,
     DELETE: (id: number) => `${API_PREFIX}/Category/${id}`,
   },
+  FINANCIAL: {
+    MONTHLY_REPORT: (month: number, year: number) => `${API_PREFIX}/Financial/monthly-report/${month}/${year}`,
+  },
 } as const;

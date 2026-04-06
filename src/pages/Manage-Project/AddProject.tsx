@@ -35,12 +35,12 @@ type FormValues = {
   status: string;
 
   managedByPartnerId: number;
-  
+
   // Profile integration
   profileUserId: number | null;
   profileIsPaid: string;
   profileAmount: string; // Changed to string for IndianAmountInput
-  
+
   profileId: number | null;
   interviewingUserId: number | null;
 
@@ -63,21 +63,20 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const [submitting, setSubmitting] = useState(false);
 
   // ── Lazy Load Fetchers ───────────────────────────────────────────────────
-
   const loadPartners = useCallback(async () => {
     try {
       const [usersRes, partnersRes] = await Promise.all([
         getAllUsers(1, 1000),
         getAllPartners()
       ]);
-      
+
       return [
         { value: "", label: "Select partner" },
         ...(partnersRes || []).map((p: any) => {
           const u = usersRes.data.find((usr: any) => usr.id === p.userId);
-          return { 
-            value: String(p.id), 
-            label: u ? `${u.firstName} ${u.lastName}` : `Partner #${p.id}` 
+          return {
+            value: String(p.id),
+            label: u ? `${u.firstName} ${u.lastName}` : `Partner #${p.id}`
           };
         })
       ];
@@ -94,7 +93,7 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
       ]);
       const userIdsWithProfiles = new Set(profilesRes.map((p: any) => p.userId));
       const list = usersRes.data.filter((u: any) => !userIdsWithProfiles.has(u.id));
-      
+
       return [
         { value: "", label: list.length > 0 ? "Select user" : "No users available" },
         ...list.map((u: any) => ({ value: String(u.id), label: `${u.firstName} ${u.lastName}` }))
@@ -126,9 +125,9 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
     formState: { errors },
   } = useForm<FormValues>({
     shouldUnregister: false,
-    defaultValues: { 
-      isSmooth: false, 
-      isToolUsed: false, 
+    defaultValues: {
+      isSmooth: false,
+      isToolUsed: false,
       status: "Active",
       profileIsPaid: "true",
       profileAmount: "",
@@ -157,7 +156,7 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
   const onSubmit = async (data: FormValues) => {
     try {
       setSubmitting(true);
-      
+
       let finalProfileId = data.profileId;
 
       // ─── Automatic Profile Creation ──────────────────────────────────────
@@ -230,6 +229,14 @@ export default function AddProjectForm({ onAdded }: { onAdded?: () => void }) {
       <div>
         <Label>Manager Name <span className="text-error-500">*</span></Label>
         <Input {...register("managerName", { required: "Required" })} />
+      </div>
+      <div>
+        <Label>Manager Email <span className="text-error-500">*</span></Label>
+        <Input type="email" {...register("managerEmail", { required: "Required" })} />
+      </div>
+      <div>
+        <Label>Manager Contact <span className="text-error-500">*</span></Label>
+        <Input {...register("managerContact", { required: "Required" })} />
       </div>
       <div>
         <Label>Manager Email <span className="text-error-500">*</span></Label>

@@ -4,6 +4,8 @@ import PageMeta from "../../components/common/PageMeta";
 import Label from "../../components/form/Label";
 import Input from "../../components/form/input/InputField";
 import Button from "../../components/ui/button/Button";
+import Select from "../../components/form/Select";
+
 import { showError, showSuccess } from "../../utils/toast";
 import { useNavigate } from "react-router";
 
@@ -19,9 +21,9 @@ function AddPartner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [partnershipType, setPartnershipType] = useState("");
   const [sharePercentage, setSharePercentage] = useState("");
-  const [branchId, setBranchId] = useState("");
+  const [branchId, setBranchId] = useState("2"); // 👈 Fixed at 2 for Surat
+
 
   const [loading, setLoading] = useState(false);
 
@@ -54,11 +56,11 @@ function AddPartner() {
 
       await createPartner({
         userId,
-        partnershipType,
         sharePercentage: Number(sharePercentage) || 0,
-        branchId: Number(branchId) || 1,
+        branchId: Number(branchId) || 2, // 👈 Ensures ID 2
         isMainPartner: false,
       });
+
 
       showSuccess("Partner added successfully 🚀");
 
@@ -117,6 +119,7 @@ function AddPartner() {
 
             <div>
               <Label>Password *</Label>
+              <Input type="password" value={password} onChange={(e: any) => setPassword(e.target.value)} />
               <Input
                 type="password"
                 value={password}
@@ -135,6 +138,10 @@ function AddPartner() {
 
             <div>
               <Label>Branch</Label>
+              <Select 
+                options={[{ value: "2", label: "Surat" }]} 
+                value={branchId}
+                onChange={(val) => setBranchId(val)}
 
               <Select
                 value={branchId}
@@ -146,6 +153,7 @@ function AddPartner() {
                 placeholder="Select Branch"
               />
             </div>
+
           </div>
 
           {/* Buttons */}

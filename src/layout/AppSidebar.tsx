@@ -8,10 +8,10 @@ import {
   HorizontaLDots,
   Handshake,
   EmployeeeIcon,
-  FileText,
 } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
-import { Projector } from "lucide-react";
+import { Projector, User2Icon, Wallet, HandCoins, PackagePlus, FileType, ListTree } from "lucide-react";
+import Logo from "../components/common/Logo";
 
 type NavItem = {
   name: string;
@@ -42,29 +42,34 @@ const navItems: NavItem[] = [
     path: "/manage-project",
   },
   {
-    icon: <FileText />,
+    icon: <HandCoins />,
     name: "Manage Expense",
     path: "/manage-expense",
   },
   {
-    icon: <FileText />,
+    icon: <Wallet />,
     name: "Manage Revenue",
     path: "/manage-revenue",
   },
   {
-    icon: <FileText />,
+    icon: <PackagePlus />,
     name: "Manage Asset",
     path: "/manage-asset",
   },
   {
-    icon: <FileText />,
+    icon: <FileType />,
     name: "Manage Document Type",
     path: "/document-type",
   },
   {
-    icon: <FileText />,
+    icon: <ListTree />,
     name: "Manage Category",
     path: "/manage-category",
+  },
+  {
+    icon: <User2Icon />,
+    name: "Manage Users",
+    path: "/manage-user",
   },
 ];
 
@@ -301,29 +306,9 @@ const AppSidebar: React.FC = () => {
       >
         <Link to="/">
           {isExpanded || isHovered || isMobileOpen ? (
-            <>
-              <img
-                className="dark:hidden"
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-              <img
-                className="hidden dark:block"
-                src="/images/logo/logo-dark.svg"
-                alt="Logo"
-                width={150}
-                height={40}
-              />
-            </>
+            <Logo variant="full" />
           ) : (
-            <img
-              src="/images/logo/logo-icon.svg"
-              alt="Logo"
-              width={32}
-              height={32}
-            />
+            <Logo variant="icon" />
           )}
         </Link>
       </div>
